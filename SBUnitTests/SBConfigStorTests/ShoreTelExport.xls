@@ -1,0 +1,158 @@
+<TABLE WIDTH='100%'CELLSPACING=0 CELLPADDING=0 BORDER=1>
+<tr>
+<TD class=heading >First Name</TD><TD class=heading >Last Name</TD><TD class=heading >Site</TD><TD class=heading >User Group</TD><TD class=heading >Access License</TD><TD class=heading >Extension</TD><TD class=heading >Mailbox</TD><TD class=heading >Switch</TD><TD class=heading >Port</TD><TD class=heading >Status</TD><tr>
+
+					<TR>
+					<TD>Test</TD>
+<TD>User 1</TD>
+<TD>Headquarters</TD>
+<TD><A _t="Executives" HREF="usergroup.asp?ID=1">Executives</A></TD>
+<TD>Personal</TD>
+<TD>114</TD>
+<TD>114</TD>
+<TD>SoftSwitch</TD>
+<TD></TD>
+<TD>Home</TD>
+
+					</TR>
+					
+					<TR>
+					<TD>Test</TD>
+<TD>User 2</TD>
+<TD>Headquarters</TD>
+<TD><A _t="Executives" HREF="usergroup.asp?ID=1">Executives</A></TD>
+<TD>Personal</TD>
+<TD>115</TD>
+<TD>115</TD>
+<TD>SoftSwitch</TD>
+<TD></TD>
+<TD>Home</TD>
+
+					</TR>
+					
+					<TR>
+					<TD>Dålf</TD>
+<TD>Lundgrön</TD>
+<TD>Headquarters</TD>
+<TD><A _t="Executives" HREF="usergroup.asp?ID=1">Executives</A></TD>
+<TD>Personal</TD>
+<TD>116</TD>
+<TD>116</TD>
+<TD>SoftSwitch</TD>
+<TD>Any IP Phone</TD>
+<TD>Home</TD>
+
+					</TR>
+					
+					<TR>
+					<TD>François</TD>
+<TD>Mitterrand</TD>
+<TD>Headquarters</TD>
+<TD><A _t="Executives" HREF="usergroup.asp?ID=1">Executives</A></TD>
+<TD>Personal</TD>
+<TD>117</TD>
+<TD>117</TD>
+<TD>SoftSwitch</TD>
+<TD>Any IP Phone</TD>
+<TD>Home</TD>
+
+					</TR>
+					
+					<TR>
+					<TD>آداب، آية،</TD>
+<TD>قرآن، مرآ</TD>
+<TD>Headquarters</TD>
+<TD><A _t="Executives" HREF="usergroup.asp?ID=1">Executives</A></TD>
+<TD>Personal</TD>
+<TD>118</TD>
+<TD>118</TD>
+<TD>SoftSwitch</TD>
+<TD>Any IP Phone</TD>
+<TD>Home</TD>
+
+					</TR>
+					
+					<TR>
+					<TD>U</TD>
+<TD>External313</TD>
+<TD>Headquarters</TD>
+<TD><A _t="Executives" HREF="usergroup.asp?ID=1">Executives</A></TD>
+<TD>Personal</TD>
+<TD>313</TD>
+<TD>313</TD>
+<TD>SoftSwitch</TD>
+<TD>Any IP Phone</TD>
+<TD>Home</TD>
+
+					</TR>
+					
+					<TR>
+					<TD>Bryan</TD>
+<TD>Ayers</TD>
+<TD>Headquarters</TD>
+<TD><A _t="Executives" HREF="usergroup.asp?ID=1">Executives</A></TD>
+<TD>Personal</TD>
+<TD>203</TD>
+<TD>203</TD>
+<TD>sw1</TD>
+<TD>00-10-49-03-1D-5A</TD>
+<TD>Home</TD>
+
+					</TR>
+					
+					<TR>
+					<TD>Tim</TD>
+<TD>Kruse</TD>
+<TD>Headquarters</TD>
+<TD><A _t="Executives" HREF="usergroup.asp?ID=1">Executives</A></TD>
+<TD>Personal</TD>
+<TD>204</TD>
+<TD>204</TD>
+<TD>sw1</TD>
+<TD>5</TD>
+<TD>Home</TD>
+
+					</TR>
+					
+					<TR>
+					<TD>Steve</TD>
+<TD>Harris</TD>
+<TD>Headquarters</TD>
+<TD><A _t="Executives" HREF="usergroup.asp?ID=1">Executives</A></TD>
+<TD>Personal</TD>
+<TD>205</TD>
+<TD></TD>
+<TD>sw1</TD>
+<TD>00-09-6E-0C-B5-2F</TD>
+<TD>Home</TD>
+
+					</TR>
+					
+					<TR>
+					<TD>Jarrod</TD>
+<TD>Lorenzo</TD>
+<TD>Headquarters</TD>
+<TD><A _t="Executives" HREF="usergroup.asp?ID=1">Executives</A></TD>
+<TD>Personal</TD>
+<TD>206</TD>
+<TD>206</TD>
+<TD>sw1</TD>
+<TD>00-10-49-02-EB-DF</TD>
+<TD>Home</TD>
+
+					</TR>
+					
+					<TR>
+					<TD>U</TD>
+<TD>External312</TD>
+<TD>Headquarters</TD>
+<TD><A _t="Executives" HREF="usergroup.asp?ID=1">Executives</A></TD>
+<TD>Personal</TD>
+<TD>312</TD>
+<TD></TD>
+<TD>sw1</TD>
+<TD>6</TD>
+<TD>Home</TD>
+
+					</TR>
+					</TABLE>

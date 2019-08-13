@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+BINDIR="/opt/speechbridge/bin"
+LOGDIR="/opt/speechbridge/logs"
+yesterdaystr="$(/bin/date --date=yesterday +%Y%m%d)"
+
+# Stop services
+/sbin/service speechbridged stop
+/sbin/service httpd stop
+
+# Make sure everything is gone
+ps -C mono -eo pid,args | grep "SBLocalRM.exe" | awk '{ print $1}' | xargs kill -9
+ps -C mono -eo pid,args | grep "AudioMgr.exe" | awk '{ print $1}' | xargs kill -9
+ps -C mono -eo pid,args | grep "DialogMgr.exe" | awk '{ print $1}' | xargs kill -9
+ps -C mono -eo pid,args | grep "SBSched.exe" | awk '{ print $1}' | xargs kill -9
+killproc AudioRtr
+killproc ProxySrv
+killproc mono
+
+mv -f $LOGDIR/SBLocalRM-stdout.log $LOGDIR/SBLocalRM-stdout_${yesterdaystr}.log
+mv -f $LOGDIR/SBLocalRM-stderr.log $LOGDIR/SBLocalRM-stderr_${yesterdaystr}.log
+
+service httpd start
+service speechbridged start

@@ -1,0 +1,182 @@
+#!/bin/sh
+# chkconfig: 35 96 10
+# description: Starts and stops SpeechBridge
+# Startup script for SpeechBridge SIP user agents
+#
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+
+MONODIR="/opt/novell/mono/bin"
+BINDIR="/opt/speechbridge/bin"
+LOGDIR="/opt/speechbridge/logs"
+CFGDIR="/opt/speechbridge/config"
+RETVAL=0
+prog="SpeechBridge"
+#LVSRE_DIR=/opt/lumenvox/engine_7.5
+LVSRE_DIR=/opt/lumenvox/engine
+LV_EXE=./LVSRE_SERVER
+
+
+start()
+{
+    # Make sure old logs without date embedded in the filename don't get overwritten
+    NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+    mv -f $LOGDIR/SBLocalRM-stdout.log $LOGDIR/SBLocalRM-stdout_${NOWSTR}.log > /dev/null 2> /dev/null
+    mv -f $LOGDIR/SBLocalRM-stderr.log $LOGDIR/SBLocalRM-stderr_${NOWSTR}.log > /dev/null 2> /dev/null
+    mv -f $LOGDIR/ProxySrv.log $LOGDIR/ProxySrv_${NOWSTR}.log > /dev/null 2> /dev/null
+
+    # Get IP address for eth0, hostname
+    IPADDR=`ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'`
+    HOSTNAME=`hostname`
+
+    echo "# Do not remove the following line, or various programs" > /etc/hosts
+    echo "# that require network functionality will fail." >> /etc/hosts
+    echo "::1       localhost6.localdomain6 localhost6" >> /etc/hosts
+    echo "127.0.0.1 localhost.localdomain   localhost" >> /etc/hosts
+    echo "$IPADDR   $HOSTNAME       speechbridge1" >> /etc/hosts
+
+    echo -n $"Starting $prog: " 
+
+# Set up Lumenvox variables
+    export LVBIN=$LVSRE_DIR/bin
+    export LVINCLUDE=$LVSRE_DIR/include
+    export LVRESPONSE=$LVSRE_DIR/Lang/Responses
+    export LVLANG=$LVSRE_DIR/Lang
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$LVSRE_DIR/lib
+
+# Wait for Lumenvox to initialize
+    sleep 15
+
+
+# Start Mono apps
+    # OLD STARTS
+    #daemon $MONODIR/mono --desktop $BINDIR/SBLocalRM.exe --desktop > /dev/null 2> $LOGDIR/SBLocalRM-stderr.log
+    #daemon $MONODIR/mono $BINDIR/SBLocalRM.exe > $LOGDIR/SBLocalRM-stdout.log 2> $LOGDIR/SBLocalRM-stderr.log
+
+    # Forking in Mono 2.6.4 with Process.Start() changed behavior and no longer exits, so we had to add the ampersand to the startup line.
+    daemon $MONODIR/mono $BINDIR/SBLocalRM.exe > /dev/null 2> $LOGDIR/SBLocalRM-stderr.log &
+    
+    RETVAL=$?
+    echo
+
+    return $RETVAL
+}
+
+stop()
+{
+# Kill SpeechBridge components
+	echo -n $"Stopping $prog: "
+	ps -C mono -eo pid,args | grep "SBLocalRM.exe" | awk '{ print $1}' | xargs kill -9
+	ps -C mono -eo pid,args | grep "AudioMgr.exe" | awk '{ print $1}' | xargs kill -9
+	ps -C mono -eo pid,args | grep "DialogMgr.exe" | awk '{ print $1}' | xargs kill -9
+	ps -C mono -eo pid,args | grep "SBSched.exe" | awk '{ print $1}' | xargs kill -9
+#	rm -f /root/.wapi/*
+#	rmdir /root/.wapi
+	killproc SBLauncher
+	killproc ProxySrv
+	killproc AudioRtr
+	echo
+	RETVAL=$?
+
+    # Make sure old logs without date embedded in the filename don't get overwritten
+    NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+    mv -f $LOGDIR/SBLocalRM-stdout.log $LOGDIR/SBLocalRM-stdout_${NOWSTR}.log > /dev/null 2> /dev/null
+    mv -f $LOGDIR/SBLocalRM-stderr.log $LOGDIR/SBLocalRM-stderr_${NOWSTR}.log > /dev/null 2> /dev/null
+    mv -f $LOGDIR/ProxySrv.log $LOGDIR/ProxySrv_${NOWSTR}.log > /dev/null 2> /dev/null
+
+	return $RETVAL
+}
+
+restart()
+{
+# Kill SpeechBridge components
+	echo -n $"Stopping $prog: "
+	ps -C mono -eo pid,args | grep "SBLocalRM.exe" | awk '{ print $1}' | xargs kill -9
+	ps -C mono -eo pid,args | grep "AudioMgr.exe" | awk '{ print $1}' | xargs kill -9
+	ps -C mono -eo pid,args | grep "DialogMgr.exe" | awk '{ print $1}' | xargs kill -9
+	ps -C mono -eo pid,args | grep "SBSched.exe" | awk '{ print $1}' | xargs kill -9
+#	rm -f /root/.wapi/*
+#	rmdir /root/.wapi
+	killproc SBLauncher
+	killproc ProxySrv
+	killproc AudioRtr
+	echo
+
+    # Make sure old logs without date embedded in the filename don't get overwritten
+    NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+    mv -f $LOGDIR/SBLocalRM-stdout.log $LOGDIR/SBLocalRM-stdout_${NOWSTR}.log > /dev/null 2> /dev/null
+    mv -f $LOGDIR/SBLocalRM-stderr.log $LOGDIR/SBLocalRM-stderr_${NOWSTR}.log > /dev/null 2> /dev/null
+    mv -f $LOGDIR/ProxySrv.log $LOGDIR/ProxySrv_${NOWSTR}.log > /dev/null 2> /dev/null
+
+    # Get IP address for eth0, hostname
+    IPADDR=`ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'`
+    HOSTNAME=`hostname`
+
+    echo "# Do not remove the following line, or various programs" > /etc/hosts
+    echo "# that require network functionality will fail." >> /etc/hosts
+    echo "::1       localhost6.localdomain6 localhost6" >> /etc/hosts
+    echo "127.0.0.1 localhost.localdomain   localhost" >> /etc/hosts
+    echo "$IPADDR   $HOSTNAME       speechbridge1" >> /etc/hosts
+
+    echo -n $"Starting $prog: " 
+
+# Set up Lumenvox variables
+    export LVBIN=$LVSRE_DIR/bin
+    export LVINCLUDE=$LVSRE_DIR/include
+    export LVRESPONSE=$LVSRE_DIR/Lang/Responses
+    export LVLANG=$LVSRE_DIR/Lang
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$LVSRE_DIR/lib
+
+# Start Mono apps
+    # OLD STARTS
+    #daemon $MONODIR/mono --desktop $BINDIR/SBLocalRM.exe --desktop > /dev/null 2> $LOGDIR/SBLocalRM-stderr.log
+    #daemon $MONODIR/mono $BINDIR/SBLocalRM.exe > $LOGDIR/SBLocalRM-stdout.log 2> $LOGDIR/SBLocalRM-stderr.log
+
+    # Forking in Mono 2.6.4 with Process.Start() changed behavior and no longer exits, so we had to add the ampersand to the startup line.
+    daemon $MONODIR/mono $BINDIR/SBLocalRM.exe > /dev/null 2> $LOGDIR/SBLocalRM-stderr.log &
+    
+    RETVAL=$?
+    echo
+
+    return $RETVAL
+}
+
+case "$1" in
+	start)
+		start
+		;;
+
+	stop)
+		stop
+		;;
+
+	status)
+		#status SBLocalRM.exe
+		ps -C mono -eo pid,args | grep "SBLocalRM.exe"
+		ps -C mono -eo pid,args | grep "AudioMgr.exe"
+		ps -C mono -eo pid,args | grep "DialogMgr.exe"
+		ps -C mono -eo pid,args | grep "SBSched.exe"
+		ps -eo pid,args | grep "AudioRtr"
+		ps -eo pid,args | grep "ProxySrv"
+		ps -eo pid,args | grep "SBLauncher"
+		;;
+	restart)
+		restart
+		;;
+	#condrestart)
+	#	if test "x`pidof gua`" != x; then
+	#		stop
+	#		start
+	#	fi
+	#	;;
+
+	*)
+		#echo $"Usage: $0 {start|stop|restart|condrestart|status}"
+		echo $"Usage: $0 {start|stop|restart|status}"
+		exit 1
+
+esac
+
+exit $RETVAL

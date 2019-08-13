@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+	<appSettings>
+		<add key="License" value="http://${SBLICENSESERVER_IP}:${SBLICENSESERVER_PORT}"/>
+		<add key="NpgsqlConnStr" value="Server=postgres;Database=${POSTGRES_SBDB};User ID=${POSTGRES_SBUSER};Password=${POSTGRES_SBPASSWORD};"/>
+		<add key="UrlStart" value="file:///opt/speechbridge/VoiceDocStore/AAMain.vxml.xml"/>
+		<add key="RemotingServerPort" value="1778"/>
+		<add key="RemotingAudioMgrUrl" value="tcp://localhost:1779/AudioEngine.rem"/>
+		<add key="DisableKeyboard" value="true" />
+		<add key="VxmlLocation" value="/opt/speechbridge/VoiceDocStore/"/>
+		<add key="LogFilePath" value ="/opt/speechbridge/logs" />
+		<add key="DefaultRepromptTimeout" value="10" />
+		<add key="CKey" value= "${DB_CKEY}"/>
+		<add key="CustomAssemblies" value="SBEmail;" />
+	</appSettings>
+</configuration>

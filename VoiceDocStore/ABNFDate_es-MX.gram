@@ -1,0 +1,128 @@
+#ABNF 1.0 UTF-8;
+
+language es-MX;
+
+mode voice;
+
+tag-format <lumenvox/1.0>;
+
+/*
+ * Example 1:
+ * Input: veintisiete de octubre de mil novecientos setenta y uno
+ * Output: 19711027
+ *
+ * Example 2:
+ * Input: Lunes dieciocho de septiembre
+ * Output: ????0918
+ *
+ * Example 3:
+ * Input: veintiocho diez setenta y cinco
+ * Output: 19751028
+ */
+
+$base = UNO     {$="1"} | 
+        DOS     {$="2"} | 
+        TRES    {$="3"} | 
+        CUATRO  {$="4"} | 
+        CINCO   {$="5"} | 
+        SEIS    {$="6"} | 
+        SIETE   {$="7"} | 
+        OCHO    {$="8"} | 
+        NUEVE   {$="9"} ;
+		   
+$teen = DIEZ    {$="10"} | 
+        ONCE    {$="11"} | 
+        DOCE    {$="12"} | 
+        TRECE   {$="13"} | 
+        CATORCE {$="14"} | 
+        QUINCE  {$="15"} | 
+        DIECISEIS  {$="16"} | 
+        DIECISIETE {$="17"} |
+        DIECIOCHO  {$="18"} |
+        DIECINUEVE {$="19"} ;
+
+$twenty = VEINTE       {$="20"} | 
+          VEINTIUNO    {$="21"} | 
+          VEINTIDOS    {$="22"} | 
+          VEINTITRES   {$="23"} | 
+          VEINTICUATRO {$="24"} | 
+          VEINTICINCO  {$="25"} | 
+          VEINTISEIS   {$="26"} | 
+          VEINTISIETE  {$="27"} |
+          VEINTIOCHO   {$="28"} |
+          VEINTINUEVE  {$="29"} ;
+			   
+
+$days29 = ($base {$="0"+$$}) | ($teen {$=$$}) | ($twenty {$=$$});
+$days30 = /29/ $days29 {$=$$} | (/1/ TREINTA) {$="30"};
+$days31 = /30/ $days30 {$=$$} | (/1/ TREINTA Y UNO) {$="31"};
+
+$MonthWith30Days = Abril:"04" | Junio:"06" | Septiembre:"09" | Noviembre:"11"; 
+$MonthWith31Days = Enero:"01" | Marzo:"03" | Mayo:"05" | Julio:"07" | Agosto:"08" | Octubre:"10" | Diciembre:"12";
+
+$month29 = (($days29 (/9/ de | del) Febrero)) {$="02"+ $$};
+$month30 = (($days30 (/9/ de | del) $MonthWith30Days)) {$ = $MonthWith30Days + $days30};
+$month31 = (($days31 (/9/ de | del) $MonthWith31Days)) {$ = $MonthWith31Days + $days31};
+
+$Months = ($month29 | /4/ $month30 | /7/ $month31) {$=$$};
+
+$thirty  = treinta   {$="3"} (/9/ y $base {$+=$$} | /1/ $NULL {$+="0"});
+$forty   = cuarenta  {$="4"} (/9/ y $base {$+=$$} | /1/ $NULL {$+="0"});
+$fifty   = cincuenta {$="5"} (/9/ y $base {$+=$$} | /1/ $NULL {$+="0"});
+$sixty   = sesenta   {$="6"} (/9/ y $base {$+=$$} | /1/ $NULL {$+="0"});
+$seventy = setenta   {$="7"} (/9/ y $base {$+=$$} | /1/ $NULL {$+="0"});
+$eighty  = ochenta   {$="8"} (/9/ y $base {$+=$$} | /1/ $NULL {$+="0"});
+$ninety  = noventa   {$="9"} (/9/ y $base {$+=$$} | /1/ $NULL {$+="0"});
+
+$tens = ($teen | $twenty | $thirty | $forty | $fifty | $sixty | $seventy | $eighty | $ninety)	{$=$$};
+
+$zero   = (CERO) {$="0"};
+$ohbase = (/0.1/ $zero| /0.9/ $base) {$=$$};
+$and    = Y;
+
+
+$NumberMonth29 = $days29 {$ = $$} ([$zero] DOS {$="02"+$});
+
+$NumberMonth30 = $days30 {$ = $$} ([$zero] CUATRO {$="04"+$} | 
+                          [$zero] SEIS   {$="06"+$} | 
+                          [$zero] NUEVE  {$="09"+$} | 
+                                  ONCE   {$="11"+$} );
+                  
+$NumberMonth31 = $days31 {$ = $$} ([$zero] UNO    {$="01"+$} | 
+                          [$zero] TRES   {$="03"+$} | 
+                          [$zero] CINCO  {$="05"+$} | 
+                          [$zero] SIETE  {$="07"+$} | 
+                          [$zero] OCHO   {$="08"+$} |
+                                  DIEZ   {$="10"+$} |
+                                  DOCE   {$="12"+$} );
+
+$NumberMonths = ($NumberMonth29 | /4/ $NumberMonth30 | /7/ $NumberMonth31) {$=$$};
+
+$LastTwoDigits = $base    {$="0"+$$}|
+                 $teen	  {$=$$}    |
+                 $twenty  {$=$$}    |
+                 $thirty  {$=$$}    |
+                 $forty   {$=$$}    |
+                 $fifty   {$=$$}    |
+                 $sixty   {$=$$}    |
+                 $seventy {$=$$}    |
+                 $eighty  {$=$$}    |
+                 $ninety  {$=$$}    ;
+                
+
+                 
+//$year1900 = nineteen ($hundred [[and] $base]| $ohbase | $ninety);
+$year1900 = MIL NOVECIENTOS $LastTwoDigits {$="19"+$$};
+
+$year2000 = DOS MIL {$="2000"} $LastTwoDigits {$="20"+$$};
+
+$Year = ($year1900|$year2000) {$=$$};
+
+
+$Weekday = Lunes|Martes|Miercoles|Jueves|Viernes|Sabado|Domingo;
+
+$DateAnalog = ($Weekday|$NULL) $Months { mmdd = $$; year = "????" } ( (DE | DEL) $Year {year=$$}| /0.1/ (DE | DEL) $LastTwoDigits {year="??" + $$} |$NULL) {$=year+mmdd};
+               
+$DateDigital = $NumberMonths {mmdd = $$; year = "????"} ($Year {year=$$} | $LastTwoDigits {year="??" + $$}) {$=year+mmdd};
+$Date = ( $DateDigital | $DateAnalog ){$=$$};
+

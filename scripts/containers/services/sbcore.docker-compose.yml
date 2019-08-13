@@ -1,0 +1,126 @@
+###################################################################################################
+# Copyright 2016, Incendonet Inc., All rights reserved
+#
+# This compose brings up SpeechBridge without the SIP components.
+# Override values defined here and add new values in a secondary docker-compose.yml as necessary.
+###################################################################################################
+
+version: '2'
+
+services:
+
+    postgres:
+        image:  postgres:9.2
+        environment:
+            - POSTGRES_USER
+            - POSTGRES_PASSWORD
+            - POSTGRES_DB
+            - PGDATA
+        networks:
+            - sbcore
+        volumes:
+            - "${SBPGDATA}:${PGDATA}"
+            - "${SBPGLOG}:${PGLOG}"
+
+    lvlicense:
+        image:  quay.io/incendonet/centos7-lv_license
+        # 'network_mode' should be defined in a secondary compose file if it is needed
+        #   It is not defined as "host" here and overridden for test configurations,
+        #   because then the running container won't be on the service's bridged network
+        #   (which seems like a bug in docker-compose.)
+        ports:
+            - "7569:7569"
+        volumes:
+            - "${SBLVLICLOG}:/var/log/lumenvox"
+            - "$HOSTSBHOME/volumes/opt-speechbridge/license/:/opt/speechbridge/license:ro"
+        command:    ["/usr/local/bin/entrypoint-lvlicsrv.sh"]
+
+    lvsre:
+        image:  quay.io/incendonet/centos7-lv_sre
+        depends_on:
+            - lvlicense
+        environment:
+            - LVLICSRV
+        networks:
+            - sbcore
+        volumes:
+            - "${SBLVSRELOG}:/var/log/lumenvox"
+        command:    ["/usr/local/bin/entrypoint-lvsre.sh"]
+
+    sbdotnet:
+        image:  quay.io/incendonet/centos7-sbbin_lv_cep:latest
+        depends_on:
+            - postgres
+            - lvsre
+            - sblicenseserver
+        environment:
+            - POSTGRES_SBDB
+            - POSTGRES_SBUSER
+            - POSTGRES_SBPASSWORD
+            - DB_CKEY
+            - SBLVCLIENTLOG
+            - SIPPROXYADDR
+            - SIPPORT
+            - LVLICSRV
+            - LVSRESRV
+            - SBLICENSESERVER_IP
+            - SBLICENSESERVER_PORT
+            - MONO_PATH=/opt/speechbridge/plugins
+        networks:
+            - sbcore
+        volumes:
+            - "$HOSTSBHOME/volumes/opt-speechbridge/config/:/opt/speechbridge/config"
+            - "$HOSTSBHOME/volumes/opt-speechbridge/logs/:/opt/speechbridge/logs"
+            - "$HOSTSBHOME/volumes/opt-speechbridge/license/:/opt/speechbridge/license"
+            - "$HOSTSBHOME/volumes/opt-speechbridge/plugins/:/opt/speechbridge/plugins"
+            - "$HOSTSBHOME/volumes/opt-speechbridge/VoiceDocStore/:/opt/speechbridge/VoiceDocStore"
+            - "${SBLVCLIENTLOG}:/var/log/lumenvox"
+        command:    ["/opt/speechbridge/bin/entrypoint-sbdotnet.sh"]
+
+    sbweb:
+        image:  quay.io/incendonet/centos7-sbweb:latest
+        depends_on:
+            - postgres
+            - sblicenseserver
+        ports:
+            - "60001:80/tcp"
+        environment:
+            - POSTGRES_SBDB
+            - POSTGRES_SBUSER
+            - POSTGRES_SBPASSWORD
+            - DB_CKEY
+            - SBLICENSESERVER_IP
+            - SBLICENSESERVER_PORT
+        networks:
+             - sbcore
+        volumes:
+            - "$HOSTSBHOME/volumes/opt-speechbridge/config/:/opt/speechbridge/config"
+            - "$HOSTSBHOME/volumes/opt-speechbridge/VoiceDocStore/:/opt/speechbridge/VoiceDocStore"
+        volumes_from:
+            - sbdotnet
+        command:    ["/opt/speechbridge/bin/entrypoint-sbweb.sh"]
+
+    sblicenseserver:
+        image:  quay.io/incendonet/sblicenseserver:latest
+        environment:
+            - ASPNETCORE_URLS=http://*:${SBLICENSESERVER_PORT}
+        network_mode: "host"
+        volumes:
+            - "$HOSTSBHOME/volumes/opt-speechbridge/license/:/opt/speechbridge/license:ro"
+        command:    ["dotnet", "SBLicenseServer.dll"]
+
+    reverseproxy:
+        image: docker.io/nginx:1.12.1-alpine
+        depends_on:
+            - sblicenseserver
+            - sbweb
+        network_mode: "host"
+        volumes:
+            - "$HOSTSBHOME/volumes/etc-nginx/nginx.conf:/etc/nginx/nginx.conf"
+            - "$HOSTSBHOME/volumes/etc-nginx/nginx-selfsigned.key:/etc/nginx/nginx-selfsigned.key"
+            - "$HOSTSBHOME/volumes/etc-nginx/nginx-selfsigned.crt:/etc/nginx/nginx-selfsigned.crt"
+        command:    ["nginx", "-g", "daemon off;"]
+
+networks:
+    sbcore:
+        driver:  bridge

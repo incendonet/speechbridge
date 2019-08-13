@@ -1,0 +1,12 @@
+###################################################################################################
+# Copyright 2016, Incendonet Inc., All rights reserved
+#
+# This compose overrides the image used by sbdotnet to use the "no speech" image
+###################################################################################################
+
+version: '2'
+
+services:
+
+    sbdotnet:
+        image:  quay.io/incendonet/centos7-sbbin_nospeech:latest

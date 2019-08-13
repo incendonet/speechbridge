@@ -1,0 +1,221 @@
+#!/bin/sh
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+TODAYSTR="$(/bin/date --date=today +%Y%m%d)"
+LOGDIR="/opt/speechbridge/logs"
+LOGFILE="$LOGDIR/speechbridgemon_$TODAYSTR.log"
+CNT_TOTAL="0"
+CNT_PREV="0"
+LOOPCNT="29"
+
+MONODIR=/opt/novell/mono/bin
+MONO=$MONODIR/mono
+
+RefreshAll()
+{
+    LOGDIR="/opt/speechbridge/logs"
+
+    # Stop services
+    NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+    echo "$NOWSTR: Stopping SpeechBridge services..." >> $LOGFILE
+    /sbin/service speechbridged stop >> $LOGFILE 2>> $LOGFILE
+#    /sbin/service httpd stop >> $LOGFILE 2>> $LOGFILE
+
+    # Make sure everything is gone
+    NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+    echo "$NOWSTR: Killing remaining Mono processes..." >> $LOGFILE
+    ps -C mono -eo pid,args | grep "SBLocalRM.exe" | awk '{ print $1}' | xargs kill -9 > /dev/null 2> /dev/null
+    ps -C mono -eo pid,args | grep "AudioMgr.exe" | awk '{ print $1}' | xargs kill -9 > /dev/null 2> /dev/null
+    ps -C mono -eo pid,args | grep "DialogMgr.exe" | awk '{ print $1}' | xargs kill -9 > /dev/null 2> /dev/null
+    ps -C mono -eo pid,args | grep "SBSched.exe" | awk '{ print $1}' | xargs kill -9 > /dev/null 2> /dev/null
+#    killproc mono
+
+echo "### Remaining procs:" >> $LOGFILE
+ps -Alf | grep mono  >> $LOGFILE
+echo "###" >> $LOGFILE
+
+    NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+    echo "$NOWSTR: Killing SIP components...." >> $LOGFILE
+    killproc AudioRtr > /dev/null 2> /dev/null
+    killproc ProxySrv > /dev/null 2> /dev/null
+	killproc SBLauncher > /dev/null 2> /dev/null
+
+    NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+    mv -f $LOGDIR/SBLocalRM-stdout.log $LOGDIR/SBLocalRM-stdout_${NOWSTR}.log > /dev/null 2> /dev/null
+    mv -f $LOGDIR/SBLocalRM-stderr.log $LOGDIR/SBLocalRM-stderr_${NOWSTR}.log > /dev/null 2> /dev/null
+    mv -f $LOGDIR/ProxySrv.log $LOGDIR/ProxySrv_${NOWSTR}.log > /dev/null 2> /dev/null
+    TODAYSTR="$(/bin/date --date=today +%Y%m%d)"
+    mv -f $LOGDIR/LocalRM_${TODAYSTR}.log.txt $LOGDIR/LocalRM_${TODAYSTR}_${NOWSTR}.log.txt > /dev/null 2> /dev/null
+    mv -f $LOGDIR/AudioMgr_${TODAYSTR}.log.txt $LOGDIR/AudioMgr_${TODAYSTR}_${NOWSTR}.log.txt > /dev/null 2> /dev/null
+
+    NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+    echo "$NOWSTR: Removing Mono WAPI files..." >> $LOGFILE
+#    rm -f /root/.wapi/* > /dev/null 2> /dev/null
+#    rmdir /root/.wapi > /dev/null 2> /dev/null
+
+    echo "$NOWSTR: Cleaning up semaphores..." >> $LOGFILE
+    for SEMID in `ipcs -s | grep root | cut -f2 -d" "`; do ipcrm -s $SEMID; done >> $LOGFILE 2>> $LOGFILE
+
+    NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+#    echo "$NOWSTR: Restarting httpd..." >> $LOGFILE
+#    service httpd start >> $LOGFILE 2>> $LOGFILE
+    NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+    echo "$NOWSTR: Restarting speechbridged..." >> $LOGFILE
+    # "restart"ing, because it is faster (no 15 sleep for Lumenvox).  Will also (unnecessarily) sweep up a second time.
+    service speechbridged restart >> $LOGFILE 2>> $LOGFILE
+
+    NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+    echo "$NOWSTR: Done restarting apps." >> $LOGFILE
+
+    RETVAL=$?
+    return $RETVAL
+}
+
+NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+CNT_THREADS=`$MONO --wapi=hps | wc -l`
+echo "$NOWSTR: Hourly monitor starting. ($CNT_THREADS Mono threads.)" >> $LOGFILE
+
+while [ $LOOPCNT -gt 0 ]
+do
+    TODAYSTR="$(/bin/date --date=today +%Y%m%d)"
+    CNT_NOPOP=`grep "ERROR - ISMessaging.MsgQueue.Pop" $LOGDIR/SBLocalRM-stderr.log | wc -l                         2> /dev/null`
+    CNT_BACKTRACE=`grep "======= Backtrace: =========" $LOGDIR/SBLocalRM-stderr.log | wc -l                         2> /dev/null`
+    CNT_UNKNOWNMSG=`grep "ERROR:  Unknown eMsgType:" $LOGDIR/SBLocalRM-stderr.log | wc -l                           2> /dev/null`
+#    CNT_GLIBC=`grep "*** glibc detected *** /opt/speechbridge/bin/AudioRtr" $LOGDIR/SBLocalRM-stderr.log | wc -l    2> /dev/null`
+    CNT_EXITED=`grep "LRMWorkerThread.proc_Exited" $LOGDIR/LocalRM_$TODAYSTR.log.txt | wc -l                        2> /dev/null`
+    CNT_THREADERR=`grep "CreateThread" $LOGDIR/SBLocalRM-stderr.log | wc -l                                         2> /dev/null`
+    CNT_WAITONEFALSE=`grep "WaitOne returned false" $LOGDIR/SBLocalRM-stderr.log | wc -l                            2> /dev/null`
+    CNT_NOELEMENTS=`grep "no elements" $LOGDIR/SBLocalRM-stderr.log | wc -l                                         2> /dev/null`
+#    CNT_SOCKETEXCEPTION=`grep "SocketException" $LOGDIR/AudioMgr_$TODAYSTR.log.txt | wc -l                          2> /dev/null`
+    CNT_SOCKETEXCEPTION=`grep ", error code: 100" $LOGDIR/AudioMgr_$TODAYSTR.log.txt | wc -l                        2> /dev/null`
+	CNT_NOFREEVMC=`grep "couldn't GetFreeVMC" $LOGDIR/AudioMgr_$TODAYSTR.log.txt | wc -l                            2> /dev/null`
+    CNT_PROXYFAIL=`grep "<A>bort, <C>ore dump, <I>gnore" $LOGDIR/ProxySrv.log | wc -l                               2> /dev/null`
+    CNT_PROXYASSERTFAIL=`grep "Assertion fail" $LOGDIR/ProxySrv.log | wc -l                                         2> /dev/null`
+    CNT_STACKTRACE=`grep "tacktrace" $LOGDIR/SBLocalRM-stderr.log | wc -l                                           2> /dev/null`
+    CNT_THREADS=`$MONO --wapi=hps | wc -l                                                                           2> /dev/null`
+    CNT_CREATEPROCESS=`grep "error creating process handle" $LOGDIR/SBLocalRM-stderr.log | wc -l                    2> /dev/null`
+    CNT_OUTOFMEMORY=`grep "Out of memory" $LOGDIR/LocalRM_$TODAYSTR.log.txt | wc -l                                 2> /dev/null`
+    CNT_PGSQLEXCEPTION=`grep "NpgsqlException" $LOGDIR/SBLocalRM-stderr.log | wc -l                                 2> /dev/null`
+    CNT_PREDATAEXCEPTION=`grep "EnergyDetector.PreData() - Caught exception" $LOGDIR/SBLocalRM-stderr.log | wc -l   2> /dev/null`
+
+    CNT_TOTAL=`expr $CNT_NOPOP + $CNT_BACKTRACE`
+    CNT_TOTAL=`expr $CNT_TOTAL + $CNT_UNKNOWNMSG`
+    CNT_TOTAL=`expr $CNT_TOTAL + $CNT_GLIBC`
+    CNT_TOTAL=`expr $CNT_TOTAL + $CNT_EXITED`
+    CNT_TOTAL=`expr $CNT_TOTAL + $CNT_THREADERR`
+    CNT_TOTAL=`expr $CNT_TOTAL + $CNT_WAITONEFALSE`
+    CNT_TOTAL=`expr $CNT_TOTAL + $CNT_NOELEMENTS`
+    CNT_TOTAL=`expr $CNT_TOTAL + $CNT_STACKTRACE`
+    CNT_TOTAL=`expr $CNT_TOTAL + $CNT_PROXYFAIL`
+    CNT_TOTAL=`expr $CNT_TOTAL + $CNT_PROXYASSERTFAIL`
+    CNT_TOTAL=`expr $CNT_TOTAL + $CNT_CREATEPROCESS`
+    CNT_TOTAL=`expr $CNT_TOTAL + $CNT_OUTOFMEMORY`
+    CNT_TOTAL=`expr $CNT_TOTAL + $CNT_PGSQLEXCEPTION`
+    CNT_TOTAL=`expr $CNT_TOTAL + $CNT_PREDATAEXCEPTION`
+
+    NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+
+
+    if [ $CNT_THREADERR -gt 0 ]; then
+        echo "$NOWSTR: Logs have $CNT_THREADERR CreateThread errors.  Restarting SpeechBridge now..." >> $LOGFILE
+#        echo "Logs have $CNT_THREADERR CreateThread errors.  Restarting SpeechBridge now..." | mail -s "SpeechBridge critical error" youradmin@yourcompany.com
+        RefreshAll
+        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." >> $LOGFILE
+#        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." | mail -s "SpeechBridge restarted" youradmin@yourcompany.com
+
+    elif [ $CNT_CREATEPROCESS -gt 0 ]; then
+        echo "$NOWSTR: Logs have $CNT_CREATEPROCESS CREATEPROCESS errors.  Restarting SpeechBridge now..." >> $LOGFILE
+#        echo "Logs have $CNT_CREATEPROCESS CREATEPROCESS errors.  Restarting SpeechBridge now..." | mail -s "SpeechBridge critical error" youradmin@yourcompany.com
+        RefreshAll
+        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." >> $LOGFILE
+#        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." | mail -s "SpeechBridge restarted" youradmin@yourcompany.com
+
+    elif [ $CNT_OUTOFMEMORY -gt 0 ]; then
+        echo "$NOWSTR: Logs have $CNT_OUTOFMEMORY OUTOFMEMORY errors.  Restarting SpeechBridge now..." >> $LOGFILE
+#        echo "Logs have $CNT_OUTOFMEMORY OUTOFMEMORY errors.  Restarting now..." | mail -s "SpeechBridge critical error" youradmin@yourcompany.com
+        RefreshAll
+        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." >> $LOGFILE
+#        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." | mail -s "SpeechBridge restarted" youradmin@yourcompany.com
+
+    elif [ $CNT_NOFREEVMC -gt 0 ]; then
+        echo "$NOWSTR: Logs have $CNT_NOFREEVMC NOFREEVMC errors.  Restarting SpeechBridge now..." >> $LOGFILE
+#        echo "Logs have $CNT_NOFREEVMC NOFREEVMC errors.  Restarting now..." | mail -s "SpeechBridge critical error" youradmin@yourcompany.com
+        RefreshAll
+        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." >> $LOGFILE
+#        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." | mail -s "SpeechBridge restarted" youradmin@yourcompany.com
+
+    elif [ $CNT_PGSQLEXCEPTION -gt 0 ]; then
+        echo "$NOWSTR: Logs have $CNT_PGSQLEXCEPTION PGSql errors.  Restarting SpeechBridge now..." >> $LOGFILE
+#        echo "Logs have $CNT_PGSQLEXCEPTION PGSql errors.  Restarting SpeechBridge now..." | mail -s "SpeechBridge critical error" youradmin@yourcompany.com
+        RefreshAll
+        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." >> $LOGFILE
+#        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." | mail -s "SpeechBridge restarted" youradmin@yourcompany.com
+
+    elif [ $CNT_NOPOP -gt 0 ]; then
+        echo "$NOWSTR: Logs have $CNT_NOPOP PopT errors.  Restarting SpeechBridge now..." >> $LOGFILE
+#        echo "Logs have $CNT_NOPOP PopT errors.  Restarting SpeechBridge now..." | mail -s "SpeechBridge critical error" youradmin@yourcompany.com
+#        RefreshAll
+        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." >> $LOGFILE
+#        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." | mail -s "SpeechBridge restarted" youradmin@yourcompany.com
+
+    elif [ $CNT_THREADS -gt 4080 ]; then
+        echo "$NOWSTR: Mono threads almost depleted: $CNT_THREADS.  Restarting SpeechBridge now..." >> $LOGFILE
+#        echo "Mono threads almost depleted: $CNT_THREADS.  Restarting SpeechBridge now..." | mail -s "SpeechBridge critical error" youradmin@yourcompany.com
+        RefreshAll
+        echo "$NOWSTR: SpeechBridge has been restarted.  Please check that everything is functioning properly." >> $LOGFILE
+#        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." | mail -s "SpeechBridge restarted" youradmin@yourcompany.com
+
+    elif [ $CNT_SOCKETEXCEPTION -gt 0 ]; then
+        echo "$NOWSTR: Logs have $CNT_SOCKETEXCEPTION socket exceptions.  Restarting SpeechBridge now..." >> $LOGFILE
+#        echo "Logs have $CNT_SOCKETEXCEPTION socket exceptions.  Restarting SpeechBridge now..." | mail -s "SpeechBridge critical error" youradmin@yourcompany.com
+        RefreshAll
+        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." >> $LOGFILE
+#        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." | mail -s "SpeechBridge restarted" youradmin@yourcompany.com        
+
+    elif [ $CNT_PROXYFAIL -gt 0 ]; then
+        echo "$NOWSTR: Logs have $CNT_PROXYFAIL critical ProxySrv errors.  Restarting ProxySrv now..." >> $LOGFILE
+#        echo "Logs have $CNT_PROXYFAIL critical ProxySrv errors.  Restarting ProxySrv now..." | mail -s "SpeechBridge ProxySrv critical error" youradmin@yourcompany.com
+        NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+        mv -f $LOGDIR/ProxySrv.log $LOGDIR/ProxySrv_${NOWSTR}.log > /dev/null 2> /dev/null
+        ps -eo pid,args | grep "ProxySrv" | awk '{ print $1}' | xargs kill -9 > /dev/null 2> /dev/null
+
+    elif [ $CNT_PROXYASSERTFAIL -gt 0 ]; then
+        echo "$NOWSTR: Logs have $CNT_PROXYASSERTFAIL critical ProxySrv Assertion fail errors.  Restarting ProxySrv now..." >> $LOGFILE
+#        echo "Logs have $CNT_PROXYASSERTFAIL critical ProxySrv Assertion fail errors.  Restarting ProxySrv now..." | mail -s "SpeechBridge ProxySrv critical error" youradmin@yourcompany.com
+        NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+        mv -f $LOGDIR/ProxySrv.log $LOGDIR/ProxySrv_${NOWSTR}.log > /dev/null 2> /dev/null
+        ps -eo pid,args | grep "ProxySrv" | awk '{ print $1}' | xargs kill -9 > /dev/null 2> /dev/null
+
+    elif [ $CNT_STACKTRACE -gt 0 ]; then
+        echo "$NOWSTR: Logs have $CNT_STACKTRACE stacktrace errors.  Restarting SpeechBridge now..." >> $LOGFILE
+#        echo "Logs have $CNT_STACKTRACE stacktrace errors.  Restarting SpeechBridge now..." | mail -s "SpeechBridge critical error" youradmin@yourcompany.com
+        RefreshAll
+        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." >> $LOGFILE
+#        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." | mail -s "SpeechBridge restarted" youradmin@yourcompany.com        
+
+    elif [ $CNT_PREDATAEXCEPTION -gt 0 ]; then
+        echo "$NOWSTR: Logs have $CNT_PREDATAEXCEPTION PreData errors.  Restarting SpeechBridge now..." >> $LOGFILE
+#        echo "Logs have $CNT_PREDATAEXCEPTION PreData errors.  Restarting SpeechBridge now..." | mail -s "SpeechBridge critical error" youradmin@yourcompany.com
+        RefreshAll
+        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." >> $LOGFILE
+#        echo "SpeechBridge has been restarted.  Please check that everything is functioning properly." | mail -s "SpeechBridge restarted" youradmin@yourcompany.com        
+
+    elif [ $CNT_TOTAL -gt $CNT_PREV ]; then
+        echo "$NOWSTR: Logs have $CNT_TOTAL errors." >> $LOGFILE
+#        echo "Logs have $CNT_TOTAL errors." | mail -s "SpeechBridge encountered an error" youradmin@yourcompany.com
+        CNT_PREV=$CNT_TOTAL
+
+#    else
+#        echo "Logs are fine." >> $LOGFILE
+    fi
+
+    LOOPCNT=`expr $LOOPCNT - 1`
+    sleep 120s
+done
+
+NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+CNT_THREADS=`$MONO --wapi=hps | wc -l`
+echo "$NOWSTR: Hourly monitor concluded. ($CNT_THREADS Mono threads.)" >> $LOGFILE
+#echo "Hourly monitor concluded.  $CNT_THREADS Mono threads running." | mail -s "SpeechBridge hourly monitor done" youradmin@yourcompany.com

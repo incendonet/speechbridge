@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>    <!--
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.
+-->
+<grammar version="1.0" xmlns="http://www.w3.org/2001/06/grammar"        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"        xsi:schemaLocation="http://www.w3.org/2001/06/grammar http://www.w3.org/TR/speech-grammar/grammar.xsd"        xml:lang="en-US" root="MainGrammar" mode="voice" tag-format="semantics/1.0"><rule id="cancel0I" scope="public"><one-of><item>cancel</item></one-of></rule>
+<rule id="help1I" scope="public"><one-of><item>help</item></one-of></rule>
+<rule id="wait2I" scope="public"><one-of><item>wait</item></one-of></rule>
+<rule id="no3I" scope="public"><one-of><item>no</item></one-of></rule>
+<rule id="stop4I" scope="public"><one-of><item>stop</item></one-of></rule>
+<rule id="mainmenu5I" scope="public"><one-of><item>main menu</item></one-of></rule>
+<rule id="reademail6I" scope="public"><one-of><item>read email</item></one-of></rule>
+<rule id="getemail7I" scope="public"><one-of><item>get email</item></one-of></rule>
+<rule id="checkemail8I" scope="public"><one-of><item>check email</item></one-of></rule>
+<rule id="gotoemail9I" scope="public"><one-of><item>go to email</item></one-of></rule>
+<rule id="checkcalendar10I" scope="public"><one-of><item>check calendar</item></one-of></rule>
+<rule id="gotocalendar11I" scope="public"><one-of><item>go to calendar</item></one-of></rule>
+<rule id="PaulDiAnno13I" scope="public"><one-of><item>Paul DiAnno</item></one-of></rule>
+<rule id="SteveHarris14I" scope="public"><one-of><item>Steve Harris</item></one-of></rule>
+<rule id="stevie15I" scope="public"><one-of><item>stevie</item></one-of></rule>
+<rule id="harry16I" scope="public"><one-of><item>harry</item></one-of></rule>
+<rule id="MainGrammar" scope="public"> <one-of>
+<item><ruleref uri="#cancel0I"/></item>
+<item><ruleref uri="#help1I"/></item>
+<item><ruleref uri="#wait2I"/></item>
+<item><ruleref uri="#no3I"/></item>
+<item><ruleref uri="#stop4I"/></item>
+<item><ruleref uri="#mainmenu5I"/></item>
+<item><ruleref uri="#reademail6I"/></item>
+<item><ruleref uri="#getemail7I"/></item>
+<item><ruleref uri="#checkemail8I"/></item>
+<item><ruleref uri="#gotoemail9I"/></item>
+<item><ruleref uri="#checkcalendar10I"/></item>
+<item><ruleref uri="#gotocalendar11I"/></item>
+<item><ruleref uri="#PaulDiAnno13I"/></item>
+<item><ruleref uri="#SteveHarris14I"/></item>
+<item><ruleref uri="#stevie15I"/></item>
+<item><ruleref uri="#harry16I"/></item>
+</one-of>
+</rule>
+    </grammar>

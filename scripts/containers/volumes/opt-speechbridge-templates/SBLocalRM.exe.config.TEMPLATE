@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+	<appSettings>
+		<add key="NpgsqlConnStr" value="Server=postgres;Database=${POSTGRES_SBDB};User ID=${POSTGRES_SBUSER};Password=${POSTGRES_SBPASSWORD};"/>
+		<add key="DisableKeyboard" value="true" />
+		<add key="AutoStart" value="true" />
+		<add key="UdpListenPort" value="1772" />
+		<add key="BroadcastPort" value="" />
+		<add key="MonoBinPath" value="/usr/bin" />
+		<add key="DefaultLogFilePath" value="/opt/speechbridge/logs" />
+		<add key="DefaultBinPath" value="/opt/speechbridge/bin" />
+		<add key="DefaultConfigPath" value="/opt/speechbridge/config" />
+<!--		<add key="BinsToStart" value="ProxySrv;SBLauncher;AudioRtr" />-->
+		<add key="BinsToStart" value="" />
+		<add key="MonoBinsToStart" value="AudioMgr;DialogMgr;SBSched" />
+<!--		<add key="CheckIpOnStartup" value="false" />-->
+	</appSettings>
+</configuration>

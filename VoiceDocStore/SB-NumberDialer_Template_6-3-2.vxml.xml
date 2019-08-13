@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vxml	version="2.0" lang="en-US">
+
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+<!-- SB-NumberDialer.vxml.xml																-->
+<!--																						-->
+<!--  Notes:																				-->
+<!--																						-->
+<!-- Copyright 2015, Incendonet Inc.  All rights reserved									-->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- Document variables																		-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+
+	<var name = "oStringUtils"			expr = ""/>
+	<var name = "oNumFormatter"			expr = ""/>
+
+	<var name = "iNumMisses"			expr = "0"/>
+	<var name = "iNumConfirmMisses"		expr = "0"/>
+	<var name = "iNumConfirmRetries"	expr = "0"/>
+	<var name = "iNDConf"				expr = "0"/>
+	<var name = "sDigits"				expr = ""/>
+	<var name = "sDigitsSpeakable"		expr = ""/>
+	
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- FormCollectNum form																	-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<form id = "FormCollectNum">
+
+		<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+		<!-- Set Form properties																	-->
+		<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+		<property name="completetimeout"		value="3s" />
+		<property name="interdigittimeout"		value="3s" />
+		<property name="termchar"				value="#" />
+
+		<block>
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<!-- Form intro prompt																		-->
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<prompt bargein="true">
+				<audio src="http://localhost/VoiceDocStore/Prompts/SayOrEnterExtension.wav">Please say or enter the number to call, one digit at a time.</audio>
+				<audio src="http://localhost/VoiceDocStore/Prompts/beep.wav"></audio>
+			</prompt>
+		</block>
+		
+		<field name="fieldoptions">
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<!-- Field options																			-->
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<grammar type="application/srgs" src="http://localhost/VoiceDocStore/ABNFDigits.gram" />
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<!-- Field responses																		-->
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<filled>
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<!-- General commands																		-->
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<if cond="fieldoptions == ''">
+					<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+					<!-- Unrecognized handler (we likely won't get here when using ABNFDigits.gram)				-->
+					<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+					<if cond = "iNumMisses == '2'">
+						<SA_OPERATOREXT_MAXRETRIES/>
+							<prompt>
+								<audio src="http://localhost/VoiceDocStore/Prompts/TransferToOperator.wav">I'm sorry, but I'm having difficulty understanding you.  Please wait while I transfer you to the operator.</audio>
+								<audio src="http://localhost/VoiceDocStore/Prompts/Silence-2sec.wav"></audio>
+							</prompt>
+						</transfer>
+					<else/>
+						<audio src="http://localhost/VoiceDocStore/Prompts/Transfer-Unintelligible-BadExt.wav">I'm sorry, but I didn't get a valid number.</audio>
+						<script>
+							iNumMisses = iNumMisses + 1;
+						</script>
+						<goto next="#FormCollectNum"/>
+					</if>
+				<else/>
+					<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+					<!-- Got a result																			-->
+					<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+					<script>
+						oNumFormatter = new Incendonet.Utilities.StringHelper.NumberFormatter();
+						oStringUtils = new Incendonet.Utilities.StringHelper.Utilities();
+
+						iNDConf = oStringUtils.CopyString(fieldoptions$.confidence);
+						sDigits = oStringUtils.CopyString(fieldoptions$.utterance);
+						sDigitsSpeakable = oNumFormatter.SpacifyPhoneNumber(sDigits);
+					</script>
+					<if cond = "fieldoptions$.inputmode == 'dtmf'">
+						<script>
+							iNumConfirmMisses = 0;
+						</script>
+						<goto next="#FormCollectNumConfirm"/>
+					<elseif cond = "iNDConf > '90'"/>
+						<transfer dest="sip:application$.sDigits">
+							<prompt bargein="false">
+								<audio><value expr = "sDigitsSpeakable"/></audio>
+								<audio src="http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+								<audio src="http://localhost/VoiceDocStore/Prompts/OneMomentPlease.wav">One moment please.</audio>
+							</prompt>
+						</transfer>
+					<elseif cond = "iNDConf > '60'"/>
+						<script>
+							iNumConfirmMisses = 0;
+						</script>
+						<goto next="#FormCollectNumConfirm"/>
+					<else/>
+						<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+						<!-- Unrecognized handler																	-->
+						<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+						<if cond = "iNumMisses == '2'">
+							<SA_OPERATOREXT_MAXRETRIES/>
+								<prompt>
+									<audio src="http://localhost/VoiceDocStore/Prompts/TransferToOperator.wav">I'm sorry, but I'm having difficulty understanding you.  Please wait while I transfer you to the operator.</audio>
+									<audio src="http://localhost/VoiceDocStore/Prompts/Silence-2sec.wav"></audio>
+								</prompt>
+							</transfer>
+						<else/>
+							<audio src="http://localhost/VoiceDocStore/Prompts/Transfer-Unintelligible-BadExt.wav">I'm sorry, but I didn't get a valid number.</audio>
+							<script>
+								iNumMisses = iNumMisses + 1;
+							</script>
+							<goto next="#FormCollectNum"/>
+						</if>
+					</if>
+				</if>
+			</filled>
+		</field>
+	</form>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<form id = "FormCollectNumConfirm">
+		<block>
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<!-- Form intro prompt																		-->
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<prompt bargein="false">
+				<audio><value expr="sDigitsSpeakable"/></audio>
+				<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+				<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/IsThatCorrect.wav">Is that correct?</audio>
+				<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/beep.wav"></audio>
+			</prompt>
+		</block>
+		<field name="confirmation">
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<!-- Field options																			-->
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<grammar type="application/srgs" src="file:///opt/speechbridge/VoiceDocStore/ABNFBooleanSA.gram" />
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<!-- Field responses																		-->
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<filled>
+				<if cond="confirmation == 'true'">
+					<transfer dest="sip:application$.sDigits">
+						<prompt bargein="false">
+							<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/OneMomentPlease.wav">One moment please.</audio>
+						</prompt>
+					</transfer>
+				<elseif cond="confirmation == 'false'"/>
+					<if cond = "iNumConfirmRetries == '2'">
+						<SA_OPERATOREXT_MAXRETRIES/>
+							<prompt bargein="false">
+								<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/TransferToOperator.wav">I'm sorry, but I'm having difficulty understanding you.  Please wait while I transfer you to the operator.</audio>
+								<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/Silence-2sec.wav"></audio>
+							</prompt>
+						</transfer>
+					<else/>
+						<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/OkLetsTryThatAgain.wav">OK, let's try that again.</audio>
+						<script>
+							iNumConfirmRetries = iNumConfirmRetries + 1;
+						</script>
+					</if>
+					<goto next="#FormCollectNum"/>
+				<elseif cond="confirmation == 'main menu'"/>
+					<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/MainMenu.wav">Main menu.</audio>
+					<goto next="#FormCollectNum"/>
+				<elseif cond = "confirmation$.utterance == '1'"/>
+					<transfer dest="sip:application$.sDigits">
+						<prompt bargein="false">
+							<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/OneMomentPlease.wav">One moment please.</audio>
+						</prompt>
+					</transfer>
+				<elseif cond = "confirmation$.utterance == '2'"/>
+					<if cond = "iNumConfirmRetries == '2'">
+						<SA_OPERATOREXT_MAXRETRIES/>
+							<prompt bargein="false">
+								<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/TransferToOperator.wav">I'm sorry, but I'm having difficulty understanding you.  Please wait while I transfer you to the operator.</audio>
+								<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/Silence-2sec.wav"></audio>
+							</prompt>
+						</transfer>
+					<else/>
+						<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/OkLetsTryThatAgain.wav">OK, let's try that again.</audio>
+						<script>
+							iNumConfirmRetries = iNumConfirmRetries + 1;
+						</script>
+					</if>
+					<goto next="#FormCollectNum"/>
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<!-- Unrecognized handler																	-->
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<else/>
+					<if cond = "iNumConfirmMisses == '2'">
+						<SA_OPERATOREXT_MAXRETRIES/>
+							<prompt bargein="false">
+								<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/TransferToOperator.wav">I'm sorry, but I'm having difficulty understanding you.  Please wait while I transfer you to the operator.</audio>
+								<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/Silence-2sec.wav"></audio>
+							</prompt>
+						</transfer>
+					<else/>
+						<prompt bargein="false">
+							<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/ImSorryWasThat.wav">I'm sorry, was that</audio>
+							<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+							<audio><value expr="sDigitsSpeakable"/></audio>
+							<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+							<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/PleaseSayYesOrNo.wav">Please say, yes, or, no.</audio>
+							<audio src="file:///opt/speechbridge/VoiceDocStore/Prompts/beep.wav"></audio>
+						</prompt>
+						<script>
+							iNumConfirmMisses = iNumConfirmMisses + 1;
+						</script>
+					</if>
+				</if>
+			</filled>
+		</field>
+	</form>
+</vxml>

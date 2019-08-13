@@ -1,0 +1,46 @@
+###################################################################################################
+# Copyright 2016, Incendonet Inc., All rights reserved
+#
+# This compose brings up SpeechBridge with ProxySrv as the SIP proxy server
+###################################################################################################
+
+version: '2'
+
+services:
+
+    sbsip:
+        image:  quay.io/incendonet/centos6-sbsip_proxysrv:latest
+        depends_on:
+            - sbdotnet
+        network_mode: "host"
+        ports:
+            - "5060:5060/udp"
+        environment:
+            - SIPPROXYADDR
+            - SIPPORT
+            - SBBIN=/opt/speechbridge/bin
+        volumes:
+            - "${HOSTSBHOME}/volumes/opt-speechbridge/config/:/opt/speechbridge/config"
+            - "${HOSTSBHOME}/volumes/opt-speechbridge/logs/:/opt/speechbridge/bin/logs"
+            - "${HOSTSBHOME}/volumes/opt-speechbridge/logs/:/opt/speechbridge/logs"
+        command:    ["/opt/speechbridge/bin/entrypoint-sbproxysrv.sh"]
+
+    sbaudiortr:
+        image:  quay.io/incendonet/centos7-sbsip_audiortr:latest
+        depends_on:
+            - postgres
+            - sbdotnet
+            - sbsip
+        network_mode: "host"
+        ports:
+            - "5062-5099:5062-5099/udp"
+            - "10000-10999:10000-10999/udp"
+        environment:
+            - POSTGRES_SBDB
+            - POSTGRES_SBUSER
+            - POSTGRES_SBPASSWORD
+            - SIPPROXYADDR
+        volumes:
+            - "${HOSTSBHOME}/volumes/opt-speechbridge/config/:/opt/speechbridge/config"
+            - "${HOSTSBHOME}/volumes/opt-speechbridge/logs/:/opt/speechbridge/logs"
+        command:    ["/opt/speechbridge/bin/entrypoint-sbaudiortr.sh", "AudioRtr"]

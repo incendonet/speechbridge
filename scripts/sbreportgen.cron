@@ -1,0 +1,108 @@
+#!/bin/bash
+#
+# SpeechBridge Report version: 5.1
+# Copyright 2014, All rights reserved, Incendonet Inc.
+#
+
+BASEPATH=/opt/speechbridge
+BINPATH=$BASEPATH/bin
+LOGPATH=$BASEPATH/logs
+REPORTPATH=$BASEPATH/SBReports
+CONFIGPATH=$BASEPATH/config
+SQLITE=/usr/bin/sqlite3
+
+NUMPORTS="$(expr `grep -o ',' $CONFIGPATH/ProxySrv.config | wc -l` / 2 + 1)"
+LASTPORT="$(expr $NUMPORTS - 1)"
+
+# If we are passed the date in the first two args (for testing purposes) then use those, otherwise use yesterday
+YESTFNAME=$1
+YESTSQL=$2
+if [ -z "$YESTFNAME" ]; then
+	YESTFNAME="$(/bin/date --date=yesterday +%Y%m%d)"
+fi
+if [ -z "$YESTSQL" ]; then
+	YESTSQL="$(/bin/date --date=yesterday +%Y-%m-%d)"
+fi
+
+LOGDB=$LOGPATH/sbdailylogs_$YESTFNAME.sqlite
+
+HOURSTART=0
+HOURSTOP=24
+
+# Merge logs, generate SQL file, and run queries
+
+$BINPATH/sbmergedailylogs.sh $YESTFNAME
+
+NUMXFERS=`$SQLITE $LOGDB "SELECT COUNT(DISTINCT sSessionId) FROM tblSBLogs WHERE sMessage like '%ISMessaging.Session.ISMTransferSession';"`
+if [ "$NUMXFERS" == "0" ]; then
+	NUMXFERS=`grep "ISMessaging.Session.ISMTransferSession" $LOGPATH/AudioMgr_$YESTFNAME-ALL.log.txt | wc -l`
+fi
+
+NUMXFEROPER=`$SQLITE $LOGDB "SELECT COUNT(DISTINCT sSessionId) FROM tblSBLogs WHERE sMessage like '%TransferToOperator.wav';"`
+if [ "$NUMXFEROPER" == "0" ]; then
+	NUMXFEROPER=`grep "TransferToOperator.wav" $LOGPATH/AudioMgr_$YESTFNAME-ALL.log.txt | wc -l`
+fi
+NUMLASTPORT=`$SQLITE $LOGDB "SELECT COUNT(sSessionId) FROM tblSBLogs WHERE sPortIndex = $LASTPORT AND sMessage like '<<<DMNM ISMSessionBegin%';"`
+if [ "$NUMLASTPORT" == "0" ]; then
+	NUMLASTPORT=`grep "\[$LASTPORT\]" $LOGPATH/DialogMgr_$YESTFNAME-ALL.log.txt | grep ISMessaging.Session.ISMSessionEnd | wc -l`
+fi
+
+# Generate report
+
+echo ----------------------------------------------- \
+> $REPORTPATH/sbreport_${YESTFNAME}.txt
+echo - SpeechBridge Activity Report for $YESTSQL - \
+>> $REPORTPATH/sbreport_${YESTFNAME}.txt
+echo ----------------------------------------------- \
+>> $REPORTPATH/sbreport_${YESTFNAME}.txt
+echo >> $REPORTPATH/sbreport_${YESTFNAME}.txt
+
+echo 'Total number of calls:                                 '`grep ISMSessionBegin $LOGPATH/DialogMgr_$YESTFNAME-ALL.log.txt | wc -l` \
+>> $REPORTPATH/sbreport_${YESTFNAME}.txt
+
+echo "Number of transferred calls:                           $NUMXFERS" \
+>> $REPORTPATH/sbreport_${YESTFNAME}.txt
+echo "Number of transfers to operator (too many mis-recos):  $NUMXFEROPER" \
+>> $REPORTPATH/sbreport_${YESTFNAME}.txt
+echo "Number of calls that came in on the last port:         $NUMLASTPORT" \
+>> $REPORTPATH/sbreport_${YESTFNAME}.txt
+#echo 'Number of unrecognized utterances:                     '`grep Unintelligible $LOGPATH/AudioMgr_$YESTFNAME-ALL.log.txt | wc -l` \
+#>> $REPORTPATH/sbreport_${YESTFNAME}.txt
+echo >> $REPORTPATH/sbreport_${YESTFNAME}.txt
+
+echo 'Number of email sessions:                              '`grep " email" $LOGPATH/DialogMgr_$YESTFNAME-ALL.log.txt | wc -l` \
+>> $REPORTPATH/sbreport_${YESTFNAME}.txt
+echo 'Number of Calendar sessions:                           '`grep " calendar" $LOGPATH/DialogMgr_$YESTFNAME-ALL.log.txt | wc -l` \
+>> $REPORTPATH/sbreport_${YESTFNAME}.txt
+echo 'Number of successful logins:                           '`grep LoginSuccessful $LOGPATH/AudioMgr_$YESTFNAME-ALL.log.txt | wc -l` \
+>> $REPORTPATH/sbreport_${YESTFNAME}.txt
+echo 'Number of login failures (username):                   '`grep NotAValidUsername $LOGPATH/AudioMgr_$YESTFNAME-ALL.log.txt | wc -l` \
+>> $REPORTPATH/sbreport_${YESTFNAME}.txt
+echo 'Number of login failures (PIN):                        '`grep LoginUnsuccessful $LOGPATH/AudioMgr_$YESTFNAME-ALL.log.txt | wc -l` \
+>> $REPORTPATH/sbreport_${YESTFNAME}.txt
+echo >> $REPORTPATH/sbreport_${YESTFNAME}.txt
+
+# Count number of calls per hour
+echo "Number of calls between:" >> $REPORTPATH/sbreport_${YESTFNAME}.txt
+
+for (( II=$HOURSTART; II<10; II++ ))
+do
+	CALLSPERHOUR=`$SQLITE $LOGDB "SELECT COUNT(sSessionId) FROM tblSBLogs WHERE dtTime BETWEEN '$YESTSQL 0$II:00' AND '$YESTSQL 0$II:59:59.999' AND sMessage LIKE '<<<ARMLT ISMessaging.Session.ISMSessionBegin%';"`
+	echo "  $II:00 and $(expr $II + 1):00					$CALLSPERHOUR" \ >> $REPORTPATH/sbreport_${YESTFNAME}.txt
+done
+for (( II=10; II<$HOURSTOP; II++ ))
+do
+	CALLSPERHOUR=`$SQLITE $LOGDB "SELECT COUNT(sSessionId) FROM tblSBLogs WHERE dtTime BETWEEN '$YESTSQL $II:00' AND '$YESTSQL $II:59:59.999' AND sMessage LIKE '<<<ARMLT ISMessaging.Session.ISMSessionBegin%';"`
+	echo "  $II:00 and $(expr $II + 1):00				$CALLSPERHOUR" \ >> $REPORTPATH/sbreport_${YESTFNAME}.txt
+done
+
+echo >> $REPORTPATH/sbreport_${YESTFNAME}.txt
+
+# Make the report file available to Apache
+chown apache:apache $REPORTPATH/sbreport_${YESTFNAME}.txt
+
+# Clean up:  Leave behind only the tarball and files still open (ProxySrv, SBLocalRM-stderr)
+tar -cjf $LOGPATH/sblogs_$YESTFNAME.tar.bz2 \
+		/var/log/httpd/error_log $LOGPATH/SBLocalRM-stderr.log $LOGPATH/ProxySrv.log $LOGPATH/SBLauncherLog.log.txt\
+		$LOGDB $LOGPATH/*$YESTFNAME*-ALL.log.txt $LOGPATH/SBSched_$YESTFNAME.log.txt $LOGPATH/ProxySrv_$YESTFNAME*.log $LOGPATH/SBLocalRM-stderr_$YESTFNAME*.log $LOGPATH/speechbridgemon_$YESTFNAME.log $LOGPATH/sbfailover_$YESTFNAME.log $LOGPATH/AudioRtr_*.log
+rm -f	$LOGDB $LOGPATH/*$YESTFNAME*-ALL.log.txt $LOGPATH/SBSched_$YESTFNAME.log.txt $LOGPATH/ProxySrv_$YESTFNAME*.log $LOGPATH/SBLocalRM-stderr_$YESTFNAME*.log $LOGPATH/speechbridgemon_$YESTFNAME.log $LOGPATH/sbfailover_$YESTFNAME.log $LOGPATH/sbdailylogs_$YESTFNAME.sql

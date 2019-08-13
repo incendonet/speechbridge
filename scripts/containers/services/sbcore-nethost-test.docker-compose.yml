@@ -1,0 +1,14 @@
+###################################################################################################
+# Copyright 2016, Incendonet Inc., All rights reserved
+#
+# This override-compose hardcodes MACs.  NOT FOR PRODUCTION USE!
+###################################################################################################
+
+version: '2'
+
+services:
+
+    lvlicense:
+        mac_address:  00:50:56:C0:00:01 # NOTE:  This matches the old ABMX Xeon, so it can't be up at the same time
+        networks:
+            - sbcore

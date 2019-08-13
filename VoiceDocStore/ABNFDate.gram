@@ -1,0 +1,165 @@
+﻿#ABNF 1.0 UTF-8;
+
+language en-US;
+
+mode voice;
+
+tag-format <lumenvox/1.0>;
+
+root $Date;
+
+/*
+ * Example 1:
+ * Input: march sixteenth nineteen seventy nine
+ * Output: 19790316
+ *
+ * Example 2:
+ * Input: Wednesday the second
+ * Output: ??????02
+ *
+ * Example 3:
+ * Input: fourth of july
+ * Output: ????0704
+ *
+ * Example 4:
+ * Input: seven oh six two thousand four
+ * Output: 20040706
+ */
+
+$ordinal = (/9/ first  |one):"1"  | 
+           (/9/ second |two):"2"  | 
+           (/9/ third  |three):"3"| 
+           (/9/ fourth |four):"4" | 
+           (/9/ fifth  |five):"5" | 
+           (/9/ sixth  |six):"6"  | 
+           (/9/ seventh|seven):"7"| 
+           (/9/ eighth |eight):"8"| 
+           (/9/ ninth  |nine):"9" ;
+		   
+$teenordinal = (/9/ tenth      |ten):"10"      | 
+               (/9/ eleventh   |eleven):"11"   | 
+               (/9/ twelfth    |twelve):"12"    | 
+               (/9/ thirteenth |thirteen):"13" | 
+               (/9/ fourteenth |fourteen):"14" | 
+               (/9/ fifteenth  |fifteen):"15"  | 
+               (/9/ sixteenth  |sixteen):"16"  | 
+               (/9/ seventeenth|seventeen):"17"|
+               (/9/ eighteenth |eighteen):"18" |
+               (/9/ nineteenth |nineteen):"19" ;
+			   
+$ordinaltwenty = (/9/ twentieth | twenty) {$="20"} | /9/ (twenty $ordinal) {$="2"+$$};
+
+$days29 = ($ordinal {$="0"+$$}) | ($teenordinal {$=$$}) | ($ordinaltwenty {$=$$});
+$days30 = /29/ $days29 {$=$$} | (/9/ thirtieth| thirty) {$="30"};
+$days31 = /30/ $days30 {$=$$} | (/9/ thirty first | thirty one) {$="31"};
+
+$MonthWith30Days = April:"04" | June:"06" | September:"09" | November:"11"; 
+$MonthWith31Days = January:"01" | March:"03" | May:"05" | July:"07" | August:"08" | October:"10" | December:"12";
+
+$month29 = ((February         (/.05/ the | /.95/ $NULL) $days29) | ((/9/the | $NULL) $days29 (/9/ of | $NULL) February)) {$="02"+ $$};
+$month30 = (($MonthWith30Days (/.05/ the | /.95/ $NULL) $days30) | ((/9/the | $NULL) $days30 (/9/ of | $NULL) $MonthWith30Days)) {$ = $MonthWith30Days + $days30};
+$month31 = (($MonthWith31Days (/.05/ the | /.95/ $NULL) $days31) | ((/9/the | $NULL) $days31 (/9/ of | $NULL) $MonthWith31Days)) {$ = $MonthWith31Days + $days31};
+
+$Months = ($month29 | /4/ $month30 | /7/ $month31) {$=$$};
+
+$base = one:"1"	 |
+        two:"2"	 |
+        three:"3"|
+        four:"4" |
+        five:"5" |
+        six:"6"	 |
+        seven:"7"|
+        eight:"8"|
+        nine:"9" ;
+        
+$zero = (zero | oh):"0";
+
+$hundred = hundred;
+$ohbase = (oh $base) {$=$$};//[fix] RR - returning two interpretations when there is only one
+
+$teen = ten:"10"       |
+        eleven:"11"    |
+        twelve:"12"    |
+        thirteen:"13"  |
+        fourteen:"14"  |
+        fifteen:"15"   |
+        sixteen:"16"   |
+        seventeen:"17" |
+        eighteen:"18"  |
+        nineteen:"19"  ;
+
+$twenty  = twenty  {$="2"} (/9/ $base {$=$+$$} | $NULL {$=$+"0"});
+$thirty  = thirty  {$="3"} (/9/ $base {$=$+$$} | $NULL {$=$+"0"});
+$forty   = forty   {$="4"} (/9/ $base {$=$+$$} | $NULL {$=$+"0"});
+$fifty   = fifty   {$="5"} (/9/ $base {$=$+$$} | $NULL {$=$+"0"});
+$sixty   = sixty   {$="6"} (/9/ $base {$=$+$$} | $NULL {$=$+"0"});
+$seventy = seventy {$="7"} (/9/ $base {$=$+$$} | $NULL {$=$+"0"});
+$eighty  = eighty  {$="8"} (/9/ $base {$=$+$$} | $NULL {$=$+"0"});
+$ninety  = ninety  {$="9"} (/9/ $base {$=$+$$} | $NULL {$=$+"0"});
+$twenty_and_up = ($twenty|$thirty|$forty|$fifty|$sixty|$seventy|$eighty|$ninety){$=$$};
+
+$twentynineDay = $ohbase {$="0"+$$} | $teen {$=$$} | $twenty {$=$$};
+$thirtyDay     = /29/ $twentynineDay {$=$$} | thirty {$="30"};
+$thirtyoneDay  = /30/ $thirtyDay {$=$$} | thirty one {$="31"};
+
+$NumberMonth29 = [$zero] two $twentynineDay {$="02"+$$};
+
+$NumberMonth30 = ([$zero] four   {$="04"} | 
+                  [$zero] six    {$="06"} | 
+                  [$zero] nine   {$="09"} | 
+                          eleven {$="11"} ) $thirtyDay {$+=$$};
+                  
+$NumberMonth31 = ([$zero] one    {$="01"} | 
+                  [$zero] three  {$="03"} | 
+                  [$zero] five   {$="05"} | 
+                  [$zero] seven  {$="07"} | 
+                  [$zero] eight  {$="08"} |
+                          ten    {$="10"} |
+                          twelve {$="12"} ) $thirtyoneDay {$+=$$};
+
+$NumberMonths = ($NumberMonth29 | /4/ $NumberMonth30 | /7/ $NumberMonth31) {$=$$};
+
+$LastTwoDigits = $ohbase  {$="0"+$$}|
+                 $teen	  {$=$$}    |
+                 $twenty  {$=$$}    |
+                 $thirty  {$=$$}    |
+                 $forty   {$=$$}    |
+                 $fifty   {$=$$}    |
+                 $sixty   {$=$$}    |
+                 $seventy {$=$$}    |
+                 $eighty  {$=$$}    |
+                 $ninety  {$=$$}    ;
+                
+                 
+$Year1900LastTwoDigits =  $hundred {$="00"} ($base {$="0"+$$} | $NULL) |
+                          $LastTwoDigits {$ = $$;};
+
+						  	
+//$year1900 = nineteen ($hundred [[and] $base]| $ohbase | $ninety);
+$year1900 = nineteen $Year1900LastTwoDigits {$="19"+$$};
+
+$year2000 = two thousand {$="2000"} [and] [$base {$="200"+$$} | $teen {$="20"+$$} | $twenty_and_up {$="20"+$$}];
+
+$Year = ($year1900|$year2000) {$=$$};
+
+$Weekday = Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday;
+
+$ImpliedMonth29 = [$Weekday the] $days29 {$=$$};
+$ImpliedMonth30 = [$Weekday the] $days30 {$=$$};
+$ImpliedMonth31 = [$Weekday the] $days31 {$=$$};
+
+//$Date = ([$Weekday]($Months|$NumberMonths) {mmdd = $$; year = "????";} [$Year {year=$$}] {$=year+mmdd})|($ImpliedMonth29|$ImpliedMonth30|$ImpliedMonth31) {$="??????" + $$};
+
+
+$DateAnalog = ($Weekday|$NULL) $Months { mmdd = $$; year = "????" } ($Year {year=$$}| /0.1/$LastTwoDigits {year="??" + $$} |$NULL) {$=year+mmdd}|
+              ($Weekday the |$NULL) (the | $NULL) $days31 {$ = "??????" + $$};
+               
+$DateDigital = $NumberMonths {mmdd = $$; year = "????"} ($Year {year=$$} | $LastTwoDigits {year="??" + $$})
+               {$ = year + mmdd};
+
+$Date = ( $DateDigital | $DateAnalog ){$=$$};
+              
+
+
+
+

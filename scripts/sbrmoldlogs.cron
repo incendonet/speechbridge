@@ -1,0 +1,13 @@
+#!/bin/sh
+
+find /opt/speechbridge/logs/ -mtime +90 -exec rm {} \; >> /dev/null 2>> /dev/null
+
+find /opt/speechbridge/bin/logs/ -mtime +7 -exec rm {} \; >> /dev/null 2>> /dev/null
+
+#find /opt/speechbridge/logs/*.txt -mtime +90 -exec rm {} \; >> /dev/null 2>> /dev/null
+#find /opt/speechbridge/logs/*.log* -mtime +90 -exec rm {} \; >> /dev/null 2>> /dev/null
+
+find /opt/speechbridge/logs/sbbackup*.tar.gz -mtime +7 -exec rm {} \; >> /dev/null 2>> /dev/null
+find /opt/speechbridge/logs/sbbackup*.log -mtime +7 -exec rm {} \; >> /dev/null 2>> /dev/null
+
+find /opt/speechbridge/logs/*.bin -mtime +30 -exec rm {} \; >> /dev/null 2>> /dev/null

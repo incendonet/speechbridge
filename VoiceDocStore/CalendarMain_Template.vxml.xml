@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<vxml version="2.0" lang="en"
+		application="SBRoot.vxml.xml">
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+<!-- CalendarMain.vxml.xml																	-->
+<!--																						-->
+<!--																						-->
+<!-- Copyright 2007, Incendonet Inc.  All rights reserved									-->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- Document variables																		-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<var name = "sUsername" expr = ""/>
+	<var name = "sDomain" expr = ""/>
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- Email server.  Example:																-->
+	<!-- <var name = "sEmailServer" expr = "mymailserver"/>										-->
+	<EMAIL_SERVER/>
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- Authentication form																	-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<form id = "Authenticate">
+		<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+		<!-- 'sCallerName' field																		-->
+		<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+		<field name = "sCallerName">
+			<prompt>
+				<audio src = "http://localhost/VoiceDocStore/Prompts/Email-SayUsername.wav">Please say your user name.</audio>
+			</prompt>
+			<option>cancel</option>
+			<option>main menu</option>
+			<option>go back</option>
+			<NAMES_EMAIL_LIST/>
+			<filled>
+				<if cond = "sCallerName == 'cancel'">
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-ReturningToMainMenu.wav">Returning to the main menu.</audio>
+					<goto next = "http://localhost/VoiceDocStore/AAMain.vxml.xml"/>
+				<elseif cond = "sCallerName == 'main menu'"/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-ReturningToMainMenu.wav">Returning to the main menu.</audio>
+					<goto next = "http://localhost/VoiceDocStore/AAMain.vxml.xml"/>
+				<elseif cond = "sCallerName == 'go back'"/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-ReturningToMainMenu.wav">Returning to the main menu.</audio>
+					<goto next = "http://localhost/VoiceDocStore/AAMain.vxml.xml"/>
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<!-- Email account info.  Example:
+				
+				<elseif cond = "sCallerName == 'Steve Harris'"/>
+					<script>
+						document.sUsername = "sharris";
+						document.sDomain = "incendonet.local";
+					</script>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Names/SteveHarris.wav">Steve Harris.</audio>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+				-->
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<NAMES_EMAIL_ACCT_INFO/>
+				<else/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-NotAValidUsername.wav">I'm sorry, that was not a valid user name.</audio>
+					<!--<audio src = "http://localhost/VoiceDocStore/Prompts/Email-PleaseTryAgain.wav">Please try again.</audio>-->
+					<goto next = "#Authenticate"/>
+				</if>
+			</filled>
+		</field>
+		<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+		<!-- 'sPasscode' field																		-->
+		<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+		<field name = "sPasscode">
+			<prompt>
+				<audio src = "http://localhost/VoiceDocStore/Prompts/Email-EnterPasscode.wav">Please enter your passcode.</audio>
+			</prompt>
+			<!--<option>main menu</option>
+			<option>no</option>-->
+			<grammar type="application/srgs" src="http://localhost/VoiceDocStore/ABNFDigits.gram" />
+			<filled>
+				<!-- ~~~~~~~~~~~~~~~~~~	-->
+				<!-- Try to connect		-->
+				<!-- ~~~~~~~~~~~~~~~~~~	-->
+				<if cond = "sPasscode == 'main menu'">
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-ReturningToMainMenu.wav">Returning to the main menu.</audio>
+					<goto next = "http://localhost/VoiceDocStore/AAMain.vxml.xml"/>
+				<elseif cond = "sPasscode == 'no'"/>		<!-- Start over -->
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-TryAgain.wav">OK, let's try again.</audio>
+					<goto next = "#Authenticate"/>
+				<!--<elseif cond = "sPasscode$.inputmode == 'dtmf'"/>-->
+				<else/>
+					<script>
+						oReader = new SBEmail.WebDavConnector();
+
+						oReader.Init(sEmailServer, "", sDomain, sUsername, "");
+						oReader.SetPasscode(sPasscode$.utterance);
+						sConnected = oReader.Connect();
+					</script>
+					<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+					<!-- If we connected (verified PIN)...	-->
+					<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+					<if cond = "sConnected == 'OK'">
+						<script>
+							sConnected = oReader.SGetCalendarEntries("now", "14");
+						</script>
+						<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+						<!-- If we connected (webdav success)	-->
+						<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+						<if cond = "sConnected == 'OK'">
+							<audio src = "http://localhost/VoiceDocStore/Prompts/Email-LoginSuccessful.wav">Login successful.</audio>
+							<audio src = "http://localhost/VoiceDocStore/Prompts/Calendar-Retrieving.wav">Please wait while I retrieve your calendar.</audio>
+							<script>
+								iNumCalEntries = oReader.SNumCalendarEntries();
+							</script>
+							<!-- ~~~~~~~~~~~~~~~~~~	-->
+							<!-- If entries...		-->
+							<!-- ~~~~~~~~~~~~~~~~~~	-->
+							<if cond = "iNumCalEntries == '0'">
+								<audio src = "http://localhost/VoiceDocStore/Prompts/Calendar-NoUpcomingAppointments.wav">You have no upcoming appointments.</audio>
+								<!--<goto next = "#QCheckOld"/>-->
+								<goto next = "#QCheckEmail"/>
+							<else/>
+								<audio src = "http://localhost/VoiceDocStore/Prompts/Email-YouHave.wav">You have</audio>
+								<audio><value expr = "iNumCalEntries"/></audio>
+								<audio src = "http://localhost/VoiceDocStore/Prompts/Calendar-UpcomingAppointments.wav"> upcoming appointments.</audio>
+								<script>
+									iIndex = 0;
+									iIndexSpeak = iIndex + 1;
+									sCalId = oReader.SGetCalendarEntryId(iIndex);
+									sCalFrom = oReader.GetCalendarEntryProperty(sCalId, "FromName");
+									sCalSubject = oReader.GetCalendarEntryProperty(sCalId, "Subject");
+									sCalLocation = oReader.GetCalendarEntryProperty(sCalId, "Location");
+									sCalStart = oReader.GetCalendarEntryProperty(sCalId, "Start");
+									sCalEnd = oReader.GetCalendarEntryProperty(sCalId, "End");
+									sCalBusyStatus = oReader.GetCalendarEntryProperty(sCalId, "BusyStatus");
+								</script>
+								<goto next = "#Read"/>
+							</if>
+						<else/>
+							<audio src = "http://localhost/VoiceDocStore/Prompts/Email-LoginUnsuccessful.wav">Login failed.</audio>
+							<audio src = "http://localhost/VoiceDocStore/Prompts/Email-CheckPassword.wav">Please make sure that the password in your user preferences is the same as the one you use to get to your email.</audio>
+							<goto next = "#Authenticate"/>
+						</if>
+					<else/>
+						<audio src = "http://localhost/VoiceDocStore/Prompts/Email-LoginUnsuccessful.wav">Login failed.</audio>
+						<goto next = "#Authenticate"/>
+					</if>
+				<!--<else/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-LoginUnsuccessful.wav">Login failed.</audio>
+					<goto next = "#Authenticate"/>-->
+				</if>
+			</filled>
+		</field>
+	</form>
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- QGotoEmail form																			-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<form id = "QCheckEmail">
+		<field name = "sCheckEmail">
+			<prompt>
+				<audio src = "http://localhost/VoiceDocStore/Prompts/Calendar-QCheckEmail.wav">Would you like to check your E mail?</audio>
+			</prompt>
+			<option>yes</option>
+			<option>no</option>
+			<filled>
+				<if cond = "sCheckEmail == 'yes'">
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-Retrieving.wav">Please wait while I retrieve your email.</audio>
+					<script>
+						oReader.SetFolder("Inbox");
+						oReader.SGetHeaders(iMsgNumDays, sMsgSortOrder);
+						iNewMsgs = oReader.SGetNumNew();
+					</script>
+					<!-- ~~~~~~~~~~~~~~~~~~	-->
+					<!-- If new messages... -->
+					<!-- ~~~~~~~~~~~~~~~~~~	-->
+					<if cond = "iNewMsgs == '0'">
+						<audio src = "http://localhost/VoiceDocStore/Prompts/Email-NoNewMessages.wav">You have no new messages.</audio>
+						<goto next = "http://localhost/VoiceDocStore/EmailMain.vxml.xml#QReadOld"/>
+					<else/>
+						<audio src = "http://localhost/VoiceDocStore/Prompts/Email-YouHave.wav">You have</audio>
+						<audio><value expr = "iNewMsgs"/></audio>
+						<audio src = "http://localhost/VoiceDocStore/Prompts/Email-NewMessages.wav"> new messages.</audio>
+						<script>
+							iIndex = 0;
+							iIndexSpeak = iIndex + 1;
+							sMsgId = oReader.SGetMsgId(iIndex);
+							sMsgFrom = oReader.GetProperty(sMsgId, "FromName");
+							sMsgDate = oReader.GetProperty(sMsgId, "Date");
+							sMsgSubject = oReader.GetProperty(sMsgId, "Subject");
+							sMsgBody = oReader.GetProperty(sMsgId, "BodyText");
+							sMsgItemType = oReader.GetProperty(sMsgId, "ItemType");
+						</script>
+						<if cond = "sMsgItemType == 'MeetingRequest'">
+							<goto next = "http://localhost/VoiceDocStore/EmailMain.vxml.xml#ReadMeetingReq"/>
+						<else/>
+							<goto next = "http://localhost/VoiceDocStore/EmailMain.vxml.xml#Read"/>
+						</if>
+					</if>
+				<elseif cond = "sCheckEmail == 'no'"/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-ReturningToMainMenu.wav">Returning to the main menu.</audio>
+					<goto next = "http://localhost/VoiceDocStore/AAMain.vxml.xml"/>
+				<else/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Transfer-Unintelligible.wav">I'm sorry, I couldn't quite hear that.</audio>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Calendar-QGotoEmail.wav">Would you like to check your E mail?</audio>
+				</if>
+			</filled>
+		</field>
+	</form>
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- QCheckOld form																			-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<form id = "QCheckOld">
+		<field name = "sCheckOld">
+			<prompt>
+				<audio src = "http://localhost/VoiceDocStore/Prompts/Calendar-QReadOld.wav">Would you like to check your expired appointments?</audio>
+			</prompt>
+			<option>yes</option>
+			<option>no</option>
+			<filled>
+				<if cond = "sCheckOld == 'yes'">
+					<script>
+						iIndex = 0;
+						iIndexSpeak = iIndex + 1;
+						sCalId = oReader.SGetCalendarEntryId(iIndex);
+						sCalFrom = oReader.GetCalendarEntryProperty(sCalId, "FromName");
+						sCalSubject = oReader.GetCalendarEntryProperty(sCalId, "Subject");
+						sCalLocation = oReader.GetCalendarEntryProperty(sCalId, "Location");
+						sCalStart = oReader.GetCalendarEntryProperty(sCalId, "Start");
+						sCalEnd = oReader.GetCalendarEntryProperty(sCalId, "End");
+						sCalBusyStatus = oReader.GetCalendarEntryProperty(sCalId, "BusyStatus");
+					</script>
+					<goto next = "#Read"/>
+				<elseif cond = "sCheckOld == 'no'"/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-ReturningToMainMenu.wav">Returning to the main menu.</audio>
+					<goto next = "http://localhost/VoiceDocStore/AAMain.vxml.xml"/>
+				<else/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Transfer-Unintelligible.wav">I'm sorry, I couldn't quite hear that.</audio>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Calendar-QReadOld.wav">Would you like to check your expired appointments?</audio>
+				</if>
+			</filled>
+		</field>
+	</form>
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- Read form																				-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<form id = "Read">
+		<block>
+			<prompt>
+				<audio src = "http://localhost/VoiceDocStore/Prompts/Calendar-Appointment.wav">Appointment </audio>
+				<audio><value expr = "iIndexSpeak"/></audio>
+				<audio src = "http://localhost/VoiceDocStore/Prompts/Email-Subject.wav"> subject </audio>
+				<audio><value expr="sCalSubject"/></audio>
+				<audio src = "http://localhost/VoiceDocStore/Prompts/Calendar-BeginningAt.wav"> beginning at </audio>
+				<audio><value expr = "sCalStart"/></audio>
+				<audio src = "http://localhost/VoiceDocStore/Prompts/Calendar-EndingAt.wav"> ending at </audio>
+				<audio><value expr = "sCalEnd"/></audio>
+				<audio src = "http://localhost/VoiceDocStore/Prompts/Calendar-Location.wav"> location </audio>
+				<audio><value expr = "sCalLocation"/></audio>
+				<audio src = "http://localhost/VoiceDocStore/Prompts/Calendar-Status.wav"> status </audio>
+				<audio><value expr = "sCalBusyStatus"/></audio>
+				<audio src = "http://localhost/VoiceDocStore/Prompts/Calendar-EndOfAppointment.wav"> End of appointment.</audio>
+			</prompt>
+		</block>
+		<field name = "sReadOpt">
+			<option>main menu</option>
+			<option>repeat</option>
+			<option>go back</option>
+			<option>rewind</option>
+			<option>previous</option>
+			<option>get next</option>
+			<option>next</option>
+			<option>skip</option>
+			<option>read email</option>
+			<filled>
+				<if cond = "sReadOpt == 'main menu'">
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-OK.wav">OK.</audio>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-ReturningToMainMenu.wav">Returning to the main menu.</audio>
+					<goto next = "http://localhost/VoiceDocStore/AAMain.vxml.xml"/>
+				<elseif cond = "sReadOpt == 'repeat'"/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-Repeat.wav">Repeat.</audio>
+					<goto next = "#Read"/>
+				<elseif cond = "sReadOpt == 'go back'"/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-GoBack.wav">Go back.</audio>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+					<script>
+						iIndex = iIndex - 1;
+						iIndexSpeak = iIndex + 1;
+						sCalId = oReader.SGetCalendarEntryId(iIndex);
+						sCalFrom = oReader.GetCalendarEntryProperty(sCalId, "FromName");
+						sCalSubject = oReader.GetCalendarEntryProperty(sCalId, "Subject");
+						sCalLocation = oReader.GetCalendarEntryProperty(sCalId, "Location");
+						sCalStart = oReader.GetCalendarEntryProperty(sCalId, "Start");
+						sCalEnd = oReader.GetCalendarEntryProperty(sCalId, "End");
+						sCalBusyStatus = oReader.GetCalendarEntryProperty(sCalId, "BusyStatus");
+					</script>
+					<goto next = "#Read"/>
+				<elseif cond = "sReadOpt == 'rewind'"/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-Rewind.wav">Rewind.</audio>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+					<script>
+						iIndex = iIndex - 1;
+						iIndexSpeak = iIndex + 1;
+						sCalId = oReader.SGetCalendarEntryId(iIndex);
+						sCalFrom = oReader.GetCalendarEntryProperty(sCalId, "FromName");
+						sCalSubject = oReader.GetCalendarEntryProperty(sCalId, "Subject");
+						sCalLocation = oReader.GetCalendarEntryProperty(sCalId, "Location");
+						sCalStart = oReader.GetCalendarEntryProperty(sCalId, "Start");
+						sCalEnd = oReader.GetCalendarEntryProperty(sCalId, "End");
+						sCalBusyStatus = oReader.GetCalendarEntryProperty(sCalId, "BusyStatus");
+					</script>
+					<goto next = "#Read"/>
+				<elseif cond = "sReadOpt == 'previous'"/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-Previous.wav">Previous.</audio>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+					<script>
+						iIndex = iIndex - 1;
+						iIndexSpeak = iIndex + 1;
+						sCalId = oReader.SGetCalendarEntryId(iIndex);
+						sCalFrom = oReader.GetCalendarEntryProperty(sCalId, "FromName");
+						sCalSubject = oReader.GetCalendarEntryProperty(sCalId, "Subject");
+						sCalLocation = oReader.GetCalendarEntryProperty(sCalId, "Location");
+						sCalStart = oReader.GetCalendarEntryProperty(sCalId, "Start");
+						sCalEnd = oReader.GetCalendarEntryProperty(sCalId, "End");
+						sCalBusyStatus = oReader.GetCalendarEntryProperty(sCalId, "BusyStatus");
+					</script>
+					<goto next = "#Read"/>
+				<elseif cond = "sReadOpt == 'get next'"/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-GetNext.wav">Get next.</audio>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+					<script>
+						iIndex = iIndex + 1;
+						iIndexSpeak = iIndex + 1;
+						sCalId = oReader.SGetCalendarEntryId(iIndex);
+						sCalFrom = oReader.GetCalendarEntryProperty(sCalId, "FromName");
+						sCalSubject = oReader.GetCalendarEntryProperty(sCalId, "Subject");
+						sCalLocation = oReader.GetCalendarEntryProperty(sCalId, "Location");
+						sCalStart = oReader.GetCalendarEntryProperty(sCalId, "Start");
+						sCalEnd = oReader.GetCalendarEntryProperty(sCalId, "End");
+						sCalBusyStatus = oReader.GetCalendarEntryProperty(sCalId, "BusyStatus");
+					</script>
+					<goto next = "#Read"/>
+				<elseif cond = "sReadOpt == 'next'"/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-Next.wav">Next.</audio>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+					<script>
+						iIndex = iIndex + 1;
+						iIndexSpeak = iIndex + 1;
+						sCalId = oReader.SGetCalendarEntryId(iIndex);
+						sCalFrom = oReader.GetCalendarEntryProperty(sCalId, "FromName");
+						sCalSubject = oReader.GetCalendarEntryProperty(sCalId, "Subject");
+						sCalLocation = oReader.GetCalendarEntryProperty(sCalId, "Location");
+						sCalStart = oReader.GetCalendarEntryProperty(sCalId, "Start");
+						sCalEnd = oReader.GetCalendarEntryProperty(sCalId, "End");
+						sCalBusyStatus = oReader.GetCalendarEntryProperty(sCalId, "BusyStatus");
+					</script>
+					<goto next = "#Read"/>
+				<elseif cond = "sReadOpt == 'skip'"/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Email-Skip.wav">Skip.</audio>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+					<script>
+						iIndex = iIndex + 1;
+						iIndexSpeak = iIndex + 1;
+						sCalId = oReader.SGetCalendarEntryId(iIndex);
+						sCalFrom = oReader.GetCalendarEntryProperty(sCalId, "FromName");
+						sCalSubject = oReader.GetCalendarEntryProperty(sCalId, "Subject");
+						sCalLocation = oReader.GetCalendarEntryProperty(sCalId, "Location");
+						sCalStart = oReader.GetCalendarEntryProperty(sCalId, "Start");
+						sCalEnd = oReader.GetCalendarEntryProperty(sCalId, "End");
+						sCalBusyStatus = oReader.GetCalendarEntryProperty(sCalId, "BusyStatus");
+					</script>
+					<goto next = "#Read"/>
+				<elseif cond = "sReadOpt == 'read email'"/>
+					<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+					<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+						<audio src = "http://localhost/VoiceDocStore/Prompts/Email-Retrieving.wav">Please wait while I retrieve your email.</audio>
+						<script>
+							oReader.SetFolder("Inbox");
+							oReader.SGetHeaders(iMsgNumDays, sMsgSortOrder);
+							iNewMsgs = oReader.SGetNumNew();
+						</script>
+						<!-- ~~~~~~~~~~~~~~~~~~	-->
+						<!-- If new messages... -->
+						<!-- ~~~~~~~~~~~~~~~~~~	-->
+						<if cond = "iNewMsgs == '0'">
+							<audio src = "http://localhost/VoiceDocStore/Prompts/Email-NoNewMessages.wav">You have no new messages.</audio>
+							<goto next = "http://localhost/VoiceDocStore/EmailMain.vxml.xml#QReadOld"/>
+						<else/>
+							<audio src = "http://localhost/VoiceDocStore/Prompts/Email-YouHave.wav">You have</audio>
+							<audio><value expr = "iNewMsgs"/></audio>
+							<audio src = "http://localhost/VoiceDocStore/Prompts/Email-NewMessages.wav"> new messages.</audio>
+							<script>
+								iIndex = 0;
+								iIndexSpeak = iIndex + 1;
+								sMsgId = oReader.SGetMsgId(iIndex);
+								sMsgFrom = oReader.GetProperty(sMsgId, "FromName");
+								sMsgDate = oReader.GetProperty(sMsgId, "Date");
+								sMsgSubject = oReader.GetProperty(sMsgId, "Subject");
+								sMsgBody = oReader.GetProperty(sMsgId, "BodyText");
+								sMsgItemType = oReader.GetProperty(sMsgId, "ItemType");
+							</script>
+							<if cond = "sMsgItemType == 'MeetingRequest'">
+								<goto next = "http://localhost/VoiceDocStore/EmailMain.vxml.xml#ReadMeetingReq"/>
+							<else/>
+								<goto next = "http://localhost/VoiceDocStore/EmailMain.vxml.xml#Read"/>
+							</if>
+						</if>
+					<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+					<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<else/>
+					<audio src = "http://localhost/VoiceDocStore/Prompts/Transfer-Unintelligible.wav">I'm sorry, I couldn't quite hear that.</audio>
+					<!--<goto next = "#Read"/>-->
+				</if>
+			</filled>
+		</field>
+	</form>
+</vxml>

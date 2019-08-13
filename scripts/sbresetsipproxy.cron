@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+LOGDIR="/opt/speechbridge/logs"
+
+
+RestartProxysrv()
+{
+	killproc ProxySrv
+	RETVAL=$?
+
+    # Make sure old logs without date embedded in the filename don't get overwritten
+    NOWSTR="$(/bin/date +%Y%m%d-%H%M)"
+    mv -f $LOGDIR/ProxySrv.log $LOGDIR/ProxySrv_${NOWSTR}.log > /dev/null 2> /dev/null
+
+	return $RETVAL
+}
+
+
+RestartProxysrv
+
+exit $RETVAL

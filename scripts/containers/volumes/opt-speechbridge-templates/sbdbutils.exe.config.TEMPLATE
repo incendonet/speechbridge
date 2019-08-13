@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+	<appSettings>
+		<add key="License" value="http://${SBLICENSESERVER_IP}:${SBLICENSESERVER_PORT}"/>
+		<add key="NpgsqlConnStr" value="Server=postgres;Database=${POSTGRES_SBDB};User ID=${POSTGRES_SBUSER};Password=${POSTGRES_SBPASSWORD};"/>
+		<add key="CKey" value="${DB_CKEY}"/>
+		<add key="DefaultConfigPath" value="/opt/speechbridge/config" />
+		<add key="VxmlLocation" value="/opt/speechbridge/VoiceDocStore/"/>
+	</appSettings>
+</configuration>

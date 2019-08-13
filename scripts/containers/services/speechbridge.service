@@ -1,0 +1,12 @@
+[Unit]
+Description=SpeechBridge Core Service  
+After=docker.service  
+Requires=docker.service
+
+[Service]
+RemainAfterExit=yes
+ExecStart=/usr/local/opt/incendonet/services/sb-systemd.sh start
+ExecStop=/usr/local/opt/incendonet/services/sb-systemd.sh stop
+
+[Install]
+WantedBy=multi-user.target

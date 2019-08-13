@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?> 
+<vxml version="2.0" lang="en-US">
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+<!-- SBRoot.vxml.xml																		-->
+<!--																						-->
+<!--																						-->
+<!-- Copyright 2015, Incendonet Inc.														-->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- Set default system properties																	-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<property name="completetimeout"	value="1s" />
+	<property name="interdigittimeout"	value="3s" />
+	<property name="termchar"			value="" />
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- Application variables																	-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	
+	<!-- The following vars are needed to retain login info between pages.						-->
+	<var name = "sConnected" expr = ""/>
+	<var name = "oReader" expr = ""/>
+	
+	<!-- The following vars are also needed, but are actually specific to particular pages, and	-->
+	<!-- are used in the transition between pages.												-->
+	
+	<!-- Used by email and calendar -->
+	<var name = "iIndex" expr = "0"/>
+	<var name = "iIndexSpeak" expr = "0"/>
+	
+	<!-- Used by email -->
+	<var name = "iMsgNumDays" expr = "14"/>
+	<var name = "sMsgSortOrder" expr = "DESC"/>
+	<var name = "iNewMsgs" expr = "0"/>
+	<var name = "sMsgId" expr = ""/>
+	<var name = "sMsgFrom" expr = ""/>
+	<var name = "sMsgDate" expr = ""/>
+	<var name = "sMsgSubject" expr = ""/>
+	<var name = "sMsgBody" expr = ""/>
+	<var name = "sMsgItemType" expr = ""/>
+	
+	<!-- Used by calendar -->
+	<var name = "iCalNumDays" expr = "14"/>
+	<var name = "sCalSortOrder" expr = "DESC"/>
+	<var name = "iNumCalEntries" expr = "0"/>
+	<var name = "sCalId" expr = ""/>
+	<var name = "sCalFrom" expr = ""/>
+	<var name = "sCalSubject" expr = ""/>
+	<var name = "sCalLocation" expr = ""/>
+	<var name = "sCalStart" expr = ""/>
+	<var name = "sCalEnd" expr = ""/>
+	<var name = "sCalBusyStatus" expr = ""/>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- Application grammars																	-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	
+</vxml>

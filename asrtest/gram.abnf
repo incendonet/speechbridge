@@ -1,0 +1,6 @@
+#ABNF 1.0;
+language en-US;
+mode voice;
+root $names;
+
+$names = cancel|help|wait|no|stop|main menu|read email|get email|check email|go to email|check calendar|go to calendar|Paul DiAnno|Steve Harris|stevie|harry;

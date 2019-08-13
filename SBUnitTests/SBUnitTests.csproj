@@ -1,0 +1,132 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\NUnit.3.12.0\build\NUnit.props" Condition="Exists('..\packages\NUnit.3.12.0\build\NUnit.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{A37F45B8-3EB5-4ED5-B3C9-07BFDA1B2F76}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SBUnitTests</RootNamespace>
+    <AssemblyName>SBUnitTests</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="nunit.framework, Version=3.12.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.3.12.0\lib\net45\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AppGeneratorTests\DialogBuilderTest.cs" />
+    <Compile Include="DialogMgrTests\DialogEngineTests.cs" />
+    <Compile Include="Incendonet.Utilities.StringHelperTests\NumberFormatterTests.cs" />
+    <Compile Include="Incendonet.Utilities.StringHelperTests\PaymentCardTests.cs" />
+    <Compile Include="Incendonet.Utilities.StringHelperTests\SipFormatterTests.cs" />
+    <Compile Include="Incendonet.Utilities.StringHelperTests\UtilitiesTests.cs" />
+    <Compile Include="ISMessagingTests\SBSipAddrTests.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SBConfigStorTests\CommandsTest.cs" />
+    <Compile Include="SBConfigStorTests\CsvImportTest.cs" />
+    <Compile Include="SBConfigStorTests\ImportTestBase.cs" />
+    <Compile Include="SBConfigStorTests\InternalCapabilitiesManagerTest.cs" />
+    <Compile Include="SBConfigStorTests\SBConfigStorTest.cs" />
+    <Compile Include="SBConfigStorTests\ShoreTelImportTest.cs" />
+    <Compile Include="SBConfigStorTests\StringFilterTest.cs" />
+    <Compile Include="SBConfigStorTests\DirectoryTest.cs" />
+    <Compile Include="SBConfigStorTests\UsersTest.cs" />
+    <Compile Include="SBConfigStorTests\VoiceScriptGenTests.cs" />
+    <Compile Include="SBTTSTests\TtsLanguageCodeMappingTest.cs" />
+    <Compile Include="SimpleAESTests\SimpleAESTest.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AppGenerator\AppGenerator.csproj">
+      <Project>{71C3E037-25F9-42F4-A44E-7418200646A0}</Project>
+      <Name>AppGenerator</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DialogEngine_Console\DialogMgr_Console.csproj">
+      <Project>{D3220591-09DD-4FC7-99F9-38031EC28236}</Project>
+      <Name>DialogMgr_Console</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Incendonet.Utilities.LogClient\Incendonet.Utilities.LogClient.csproj">
+      <Project>{D4FAB469-B907-4C85-8D03-2307417B952E}</Project>
+      <Name>Incendonet.Utilities.LogClient</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Incendonet.Utilities.StringHelper\Incendonet.Utilities.StringHelper.csproj">
+      <Project>{da9d6e5c-2f9b-49a0-8588-ee66ba68d53f}</Project>
+      <Name>Incendonet.Utilities.StringHelper</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ISMessaging\ISMessaging.csproj">
+      <Project>{ae40a6d1-d788-42e0-bdce-46fbaf96069c}</Project>
+      <Name>ISMessaging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SBConfigStor\SBConfigStor.csproj">
+      <Project>{5ea90c27-d61b-4410-8426-a41172094900}</Project>
+      <Name>SBConfigStor</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SBTTS\SBTTS.csproj">
+      <Project>{FBDFE039-8B01-4E15-ABD8-9BE97425DE95}</Project>
+      <Name>SBTTS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SimpleAES\SimpleAES.csproj">
+      <Project>{ef4c8d49-52f4-4950-a21e-c1529319e7f3}</Project>
+      <Name>SimpleAES</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="SBConfigStorTests\ShoreTelExport.xls" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="SBConfigStorTests\MandatoryFields.csv" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="SBConfigStorTests\OptionalFields.csv" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\NUnit.3.12.0\build\NUnit.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NUnit.3.12.0\build\NUnit.props'))" />
+  </Target>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# Copyright 2013, All rights reserved, Incendonet Inc.
+#
+
+YESTDATE="$(/bin/date --date=yesterday +%Y%m%d)"
+LOGPATH=/opt/speechbridge/logs
+TSVFILENAME=${LOGPATH}/logs_${YESTDATE}.tsv
+LOGDBFILENAME=$LOGPATH/logdb_$YESTDATE.sqlite
+
+# Concatenate the tab-separated-value log files into one file to import
+cat ${LOGPATH}/*_${YESTDATE}.log.txt > $TSVFILENAME
+
+# Create the DB file and logs table and import the TSV file
+#sqlite3 $LOGDBFILENAME 'create table tblLogs (dtTimestamp datetime, sComponent string, sSessionId string, sLevelName string, sThreadName string, sMsg string);'
+sqlite3 $LOGDBFILENAME 'create table tblLogs (dtTimestamp datetime, sLevelName string, sThreadName string, sMsg string);'
+sqlite3 -separator $'\t' $LOGDBFILENAME ".import $TSVFILENAME tblLogs"
+
+# Zip up the results and delete the leftovers
+tar -cjf $LOGPATH/logdb_$YESTDATE.tar.bz2 $LOGDBFILENAME
+rm -f $TSVFILENAME
+rm -f $LOGDBFILENAME
+#rm -f ${LOGPATH}/*_${YESTDATE}.log.txt

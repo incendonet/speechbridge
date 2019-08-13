@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# Copyright 2012, All rights reserved, Incendonet Inc.
+#
+
+SECONDS_BETWEEN_INVOCATIONS=25
+
+run_failover_script ()
+{
+	/opt/speechbridge/bin/sbfailover.sh
+}
+
+delay_until_next_start_time ()
+{
+	if [ "$1" -lt "$SECONDS_BETWEEN_INVOCATIONS" ]; then
+		local SLEEP_SECONDS=$((SECONDS_BETWEEN_INVOCATIONS - ELAPSED_SECONDS))
+		sleep $SLEEP_SECONDS
+	fi
+}
+
+START_SECONDS=$SECONDS
+
+run_failover_script
+
+ELAPSED_SECONDS=$((SECONDS - START_SECONDS))
+
+delay_until_next_start_time "$ELAPSED_SECONDS"
+run_failover_script

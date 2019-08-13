@@ -1,0 +1,9 @@
+# This file is used by sbfailover.sh and contains the e-mail addresses of anybody that should be notified of any problems encountered.
+# This file needs to be located in /opt/speechbridge/config
+# 
+# Multiple recipients are separated by a space.  An example is show here:
+#     EMAIL_RECIPIENTS="admin@test.com john@test.com"
+#
+# If EMAIL_RECIPIENTS is left empty then no e-mail notifications will be sent by sbfailover.sh
+
+EMAIL_RECIPIENTS=""

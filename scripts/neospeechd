@@ -1,0 +1,64 @@
+#!/bin/sh
+# chkconfig: 35 96 10
+# description: Starts and stops Neospeech server
+#
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+
+NEOSPEECH_DIR="/usr/vt/bin"
+NEOSPEECH_SERVER="ttssrv"
+RETVAL=0
+
+
+start()
+{
+    $NEOSPEECH_DIR/$NEOSPEECH_SERVER -start
+    RETVAL=$?
+    
+    return $RETVAL
+}
+
+stop()
+{
+    $NEOSPEECH_DIR/$NEOSPEECH_SERVER -stop
+    RETVAL=$?
+    
+    return $RETVAL
+}
+
+restart()
+{
+    $NEOSPEECH_DIR/$NEOSPEECH_SERVER -restart
+    RETVAL=$?
+    
+    return $RETVAL
+
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+
+    stop)
+        stop
+        ;;
+
+    status)
+        ps -eo pid,args | grep $NEOSPEECH_SERVER | grep -v grep
+        netstat -anp | grep $NEOSPEECH_SERVER
+        ;;
+        
+    restart)
+        restart
+        ;;
+
+    *)
+        echo $"Usage: $0 {start|stop|restart|status}"
+        exit 1
+
+esac
+
+exit $RETVAL

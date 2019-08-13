@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vxml	version="2.0" lang="en-US"
+		application="SBRoot.vxml.xml">
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+<!-- AAMain_en-US.vxml.xml - 5.1.1															-->
+<!--																						-->
+<!--																						-->
+<!-- Copyright 2013, Incendonet Inc.  All rights reserved									-->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- Document variables																		-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<var name = "iNumMisses" expr = "0"/>
+	<var name = "oPromptSelector" expr = ""/>
+	<var name = "sGreetingFile" expr = ""/>
+	<var name = "sGreetingText" expr = ""/>
+	<var name = "oUtils" expr = ""/>
+	<var name = "sDigits" expr = ""/>
+
+	<CONFIRMATION_VARIABLES/>
+
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+	<form id = "AAMain">
+		<block>
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<!-- Form intro prompt																		-->
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<script>
+				oPromptSelector = new PromptSelector.PromptSelector(session.connection_local_uri);
+				sGreetingFile = oPromptSelector.GetPromptFile();
+				sGreetingText = oPromptSelector.GetPromptText();
+			</script>
+			<SA_INTRO_BARGEIN/>
+				<audio src="http://localhost/VoiceDocStore/Prompts/Chime.wav"></audio>
+				<audio expr="sGreetingFile"><value expr="sGreetingText"/></audio>
+				<audio src="http://localhost/VoiceDocStore/Prompts/beep.wav"></audio>
+			</prompt>
+		</block>
+		<field name="callee">
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<!-- Field options																			-->
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<option>cancel</option>
+			<option>help</option>
+			<option>wait</option>
+			<option>no</option>
+			<option>stop</option>
+			<option>hello</option>
+			<option>goodbye</option>
+			<option>main menu</option>
+			<option>repeat</option>
+			<option>read email</option>
+			<option>get email</option>
+			<option>check email</option>
+			<option>go to email</option>
+			<option>check calendar</option>
+			<option>go to calendar</option>
+			<NAMES_LIST/>
+			<CUSTOMCOMMANDS_LIST/>
+			<MOREOPTIONS_COMMAND/>
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<!-- Field responses																		-->
+			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+			<filled>
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<!-- General commands																		-->
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<if cond="callee == 'cancel'">
+					<audio src="http://localhost/VoiceDocStore/Prompts/OkCancelled.wav">Ok, cancelled.</audio>
+					<goto next="#AAMain"/>
+				<elseif cond="callee == 'help'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/AAMain-Help.wav">Say the full name of person our department you are trying to reach.  For Example, Bob Smith, or, Sales.</audio>
+					<audio src="http://localhost/VoiceDocStore/Prompts/AAMain-Help-HelpOrCancel.wav">You can also say, help, or, cancel, at any time.</audio>
+					<goto next="#AAMain"/>
+				<elseif cond="callee == 'wait'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Wait.wav">Wait.</audio>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+					<audio src="http://localhost/VoiceDocStore/Prompts/OK.wav">OK.</audio>
+					<goto next="#AAMain"/>
+				<elseif cond="callee == 'no'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/No.wav">No.</audio>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+					<audio src="http://localhost/VoiceDocStore/Prompts/OK.wav">OK.</audio>
+					<goto next="#AAMain"/>
+				<elseif cond="callee == 'stop'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Stop.wav">Stop.</audio>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+					<audio src="http://localhost/VoiceDocStore/Prompts/OK.wav">OK.</audio>
+					<goto next="#AAMain"/>
+				<elseif cond="callee == 'hello'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Hello.wav">Hello.</audio>
+					<goto next="#AAMain"/>
+				<elseif cond="callee == 'goodbye'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Goodbye.wav">Goodbye.</audio>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+					<exit/>
+				<elseif cond="callee == 'main menu'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/MainMenu.wav">Main menu.</audio>
+					<goto next="#AAMain"/>
+				<elseif cond="callee == 'repeat'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Repeat.wav">Repeat.</audio>
+					<goto next="#AAMain"/>
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<!-- Destinations to transfer to.															-->
+				<!--																						-->
+				<!-- Example:																				-->
+				<!--
+				<elseif cond="callee == 'operator'"/>
+					<transfer dest="sip:0">
+						<prompt>
+							<audio src="http://localhost/VoiceDocStore/Prompts/Operator.wav">Operator.</audio>
+							<audio src="http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+							<audio src="http://localhost/VoiceDocStore/Prompts/OneMomentPlease.wav">One moment please.</audio>
+							<audio src="http://localhost/VoiceDocStore/Prompts/Silence-2sec.wav"></audio>
+						</prompt>
+					</transfer>
+				-->
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<NAMES_TRANSFERTO_WITH_CONFIRMATION/>
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<CUSTOMCOMMANDS_DEFINITIONS/>
+				<MOREOPTIONS_SPEECH/>
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<!-- DTMF handler																			-->
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<elseif cond="callee$.inputmode == 'dtmf'"/>
+					<if cond = "callee$.utterance == '0'">
+						<SA_OPERATOREXT_DTMF/>
+							<prompt>
+								<audio src="http://localhost/VoiceDocStore/Prompts/Names/Operator.wav">Operator.</audio>
+								<audio src="http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+								<audio src="http://localhost/VoiceDocStore/Prompts/OneMomentPlease.wav">One moment please.</audio>
+								<audio src="http://localhost/VoiceDocStore/Prompts/Silence-2sec.wav"></audio>
+							</prompt>
+						</transfer>
+					<elseif cond = "callee$.utterance == '1'"/>
+						<goto next="#AAMain"/>
+					<elseif cond = "callee$.utterance == '2'"/>
+						<goto next="#AAMain"/>
+					<elseif cond = "callee$.utterance == '3'"/>
+						<goto next="#AAMain"/>
+					<elseif cond = "callee$.utterance == '4'"/>
+						<goto next="#AAMain"/>
+					<elseif cond = "callee$.utterance == '5'"/>
+						<goto next="#AAMain"/>
+					<elseif cond = "callee$.utterance == '6'"/>
+						<goto next="#AAMain"/>
+					<elseif cond = "callee$.utterance == '7'"/>
+						<goto next="#AAMain"/>
+					<elseif cond = "callee$.utterance == '8'"/>
+						<goto next="#AAMain"/>
+					<elseif cond = "callee$.utterance == '9'"/>
+						<goto next="#AAMain"/>
+					<elseif cond = "callee$.utterance == '*'"/>
+						<goto next="#AAMain"/>
+					<elseif cond = "callee$.utterance == '#'"/>
+						<MOREOPTIONS_GOTO DISABLED_URL="#AAMain"/>
+					<else/>
+						<script>
+							oUtils = new ISMessaging.Utilities();
+							sDigits = oUtils.SpacifyPhonenum(callee$.utterance);
+						</script>
+						<transfer dest="sip:callee$.utterance">
+							<prompt>
+								<audio><value expr = "sDigits"/></audio>
+								<audio src="http://localhost/VoiceDocStore/Prompts/Silence-05sec.wav"></audio>
+								<audio src="http://localhost/VoiceDocStore/Prompts/OneMomentPlease.wav">One moment please.</audio>
+								<audio src="http://localhost/VoiceDocStore/Prompts/Silence-2sec.wav"></audio>
+							</prompt>
+						</transfer>
+					</if>
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<!-- Goto email reader																		-->
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<elseif cond="callee == 'read email'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Transfer-Email.wav">Read email.</audio>
+					<goto next="http://localhost/VoiceDocStore/EmailMain.vxml.xml"/>
+				<elseif cond="callee == 'get email'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Transfer-Email.wav">Read email.</audio>
+					<goto next="http://localhost/VoiceDocStore/EmailMain.vxml.xml"/>
+				<elseif cond="callee == 'check email'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Transfer-Email.wav">Read email.</audio>
+					<goto next="http://localhost/VoiceDocStore/EmailMain.vxml.xml"/>
+				<elseif cond="callee == 'go to email'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Transfer-Email.wav">Read email.</audio>
+					<goto next="http://localhost/VoiceDocStore/EmailMain.vxml.xml"/>
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<!-- Goto calendar																			-->
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<elseif cond="callee == 'check calendar'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Transfer-Calendar.wav">Check calendar.</audio>
+					<goto next="http://localhost/VoiceDocStore/CalendarMain.vxml.xml"/>
+				<elseif cond="callee == 'go to calendar'"/>
+					<audio src="http://localhost/VoiceDocStore/Prompts/Transfer-Calendar.wav">Check calendar.</audio>
+					<goto next="http://localhost/VoiceDocStore/CalendarMain.vxml.xml"/>
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<!-- Unrecognized handler																	-->
+				<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	-->
+				<else/>
+					<if cond = "iNumMisses == '2'">
+						<SA_OPERATOREXT_MAXRETRIES/>
+							<prompt bargein="false">
+								<audio src="http://localhost/VoiceDocStore/Prompts/TransferToOperator.wav">I'm sorry, but I'm having difficulty understanding you.  Please wait while I transfer you to the operator.</audio>
+								<audio src="http://localhost/VoiceDocStore/Prompts/Silence-2sec.wav"></audio>
+							</prompt>
+						</transfer>
+					<else/>
+						<audio src="http://localhost/VoiceDocStore/Prompts/Transfer-Unintelligible.wav">I'm sorry, I couldn't quite hear that.</audio>
+						<script>
+							iNumMisses = iNumMisses + 1;
+						</script>
+					</if>
+				</if>
+			</filled>
+		</field>
+	</form>
+
+	<CONFIRMATION_FORM TRY_AGAIN_URL="#AAMain"/>
+</vxml>

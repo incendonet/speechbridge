@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Copyright 2011-2013, All rights reserved, Incendonet Inc.
+#
+
+TODAYSTR="$(/bin/date --date=today +%Y%m%d)"
+SBPATH=/opt/speechbridge
+BINPATH=$SBPATH/bin
+VDS=$SBPATH/VoiceDocStore
+PROMPTS=$VDS/Prompts
+LOGPATH=$SBPATH/logs
+LOGFILE=$LOGPATH/sbbackup_$TODAYSTR.log
+BAKFILE=$LOGPATH/sbbackup_$TODAYSTR.tar.gz
+PGPASS=/root/.pgpass
+
+# Create temp pgpass file
+echo "localhost:*:dspeechbridge:sbuser1:" > $PGPASS
+echo "" >> $PGPASS
+chmod 0600 $PGPASS
+
+echo "Starting backup: $TODAYSTR" > $LOGFILE
+echo "" >> $LOGFILE
+
+echo "Backup up PostgreSQL database..." >> $LOGFILE
+pg_dump -U sbuser1 -c dspeechbridge > $LOGPATH/dspeechbridge_$TODAYSTR.sql 2>> $LOGFILE
+echo "PostgreSQL database backup complete..." >> $LOGFILE
+
+# Create tarball
+echo "Creating tarball..." >> $LOGFILE
+tar -czf $BAKFILE $VDS/*.vxml.xml --ignore-failed-read $LOGPATH/dspeechbridge_$TODAYSTR.sql $PROMPTS/ThankYouForCalling.wav $PROMPTS/PleaseSayTheName.wav $PROMPTS/DID >> $LOGFILE 2>> $LOGFILE
+
+# Cleanup
+rm -f $PGPASS 2>> $LOGFILE
+rm -f $LOGPATH/dspeechbridge_$TODAYSTR.sql 2>> $LOGFILE
+
+echo "Done!" >> $LOGFILE

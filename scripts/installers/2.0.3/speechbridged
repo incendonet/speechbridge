@@ -1,0 +1,154 @@
+#!/bin/sh
+# chkconfig: 35 96 10
+# description: Starts and stops SpeechBridge
+# Startup script for SpeechBridge SIP user agents
+#
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+
+BINDIR="/opt/speechbridge/bin"
+LOGDIR="/opt/speechbridge/logs"
+CFGDIR="/opt/speechbridge/config"
+RETVAL=0
+prog="SpeechBridge"
+#LVSRE_DIR=/opt/lumenvox/engine_7.5
+LVSRE_DIR=/opt/lumenvox/engine
+LV_EXE=./LVSRE_SERVER
+
+
+start()
+{
+    # Get IP address for eth0, hostname
+    IPADDR=`ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'`
+    HOSTNAME=`hostname`
+
+    echo "# Do not remove the following line, or various programs" > /etc/hosts
+    echo "# that require network functionality will fail." >> /etc/hosts
+    echo "::1       localhost6.localdomain6 localhost6" >> /etc/hosts
+    echo "127.0.0.1 localhost.localdomain   localhost" >> /etc/hosts
+    echo "$IPADDR   $HOSTNAME       speechbridge1" >> /etc/hosts
+
+    echo -n $"Starting $prog: " 
+
+# Set up Lumenvox variables
+    export LVBIN=$LVSRE_DIR/bin
+    export LVINCLUDE=$LVSRE_DIR/include
+    export LVRESPONSE=$LVSRE_DIR/Lang/Responses
+    export LVLANG=$LVSRE_DIR/Lang
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$LVSRE_DIR/lib
+
+# Wait for Lumenvox to initialize
+    sleep 15
+
+
+# Start Mono apps
+    #daemon /usr/bin/mono $BINDIR/SBLocalRM.exe > $LOGDIR/SBLocalRM-stdout.log 2> $LOGDIR/SBLocalRM-stderr.log
+    daemon /usr/bin/mono $BINDIR/SBLocalRM.exe > /dev/null 2> $LOGDIR/SBLocalRM-stderr.log
+#    daemon /usr/bin/mono --desktop $BINDIR/SBLocalRM.exe --desktop > /dev/null 2> $LOGDIR/SBLocalRM-stderr.log
+    
+    RETVAL=$?
+    echo
+
+    return $RETVAL
+}
+
+stop()
+{
+# Kill SpeechBridge components
+	echo -n $"Stopping $prog: "
+	ps -C mono -eo pid,args | grep "SBLocalRM.exe" | awk '{ print $1}' | xargs kill -9
+	ps -C mono -eo pid,args | grep "AudioMgr.exe" | awk '{ print $1}' | xargs kill -9
+	ps -C mono -eo pid,args | grep "DialogMgr.exe" | awk '{ print $1}' | xargs kill -9
+	ps -C mono -eo pid,args | grep "SBSched.exe" | awk '{ print $1}' | xargs kill -9
+#	rm -f /root/.wapi/*
+#	rmdir /root/.wapi
+	killproc AudioRtr
+	killproc ProxySrv
+	echo
+	RETVAL=$?
+
+	return $RETVAL
+}
+
+restart()
+{
+# Kill SpeechBridge components
+	echo -n $"Stopping $prog: "
+	ps -C mono -eo pid,args | grep "SBLocalRM.exe" | awk '{ print $1}' | xargs kill -9
+	ps -C mono -eo pid,args | grep "AudioMgr.exe" | awk '{ print $1}' | xargs kill -9
+	ps -C mono -eo pid,args | grep "DialogMgr.exe" | awk '{ print $1}' | xargs kill -9
+	ps -C mono -eo pid,args | grep "SBSched.exe" | awk '{ print $1}' | xargs kill -9
+#	rm -f /root/.wapi/*
+#	rmdir /root/.wapi
+	killproc AudioRtr
+	killproc ProxySrv
+	echo
+
+    # Get IP address for eth0, hostname
+    IPADDR=`ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'`
+    HOSTNAME=`hostname`
+
+    echo "# Do not remove the following line, or various programs" > /etc/hosts
+    echo "# that require network functionality will fail." >> /etc/hosts
+    echo "::1       localhost6.localdomain6 localhost6" >> /etc/hosts
+    echo "127.0.0.1 localhost.localdomain   localhost" >> /etc/hosts
+    echo "$IPADDR   $HOSTNAME       speechbridge1" >> /etc/hosts
+
+    echo -n $"Starting $prog: " 
+
+# Set up Lumenvox variables
+    export LVBIN=$LVSRE_DIR/bin
+    export LVINCLUDE=$LVSRE_DIR/include
+    export LVRESPONSE=$LVSRE_DIR/Lang/Responses
+    export LVLANG=$LVSRE_DIR/Lang
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$LVSRE_DIR/lib
+
+# Start Mono apps
+    #daemon /usr/bin/mono $BINDIR/SBLocalRM.exe > $LOGDIR/SBLocalRM-stdout.log 2> $LOGDIR/SBLocalRM-stderr.log
+    daemon /usr/bin/mono $BINDIR/SBLocalRM.exe > /dev/null 2> $LOGDIR/SBLocalRM-stderr.log
+#    daemon /usr/bin/mono --desktop $BINDIR/SBLocalRM.exe --desktop > /dev/null 2> $LOGDIR/SBLocalRM-stderr.log
+    
+    RETVAL=$?
+    echo
+
+    return $RETVAL
+}
+
+case "$1" in
+	start)
+		start
+		;;
+
+	stop)
+		stop
+		;;
+
+	status)
+		#status SBLocalRM.exe
+		ps -C mono -eo pid,args | grep "SBLocalRM.exe"
+		ps -C mono -eo pid,args | grep "AudioMgr.exe"
+		ps -C mono -eo pid,args | grep "DialogMgr.exe"
+		ps -C mono -eo pid,args | grep "SBSched.exe"
+		ps -eo pid,args | grep "AudioRtr"
+		ps -eo pid,args | grep "ProxySrv"
+		;;
+	restart)
+		restart
+		;;
+	#condrestart)
+	#	if test "x`pidof gua`" != x; then
+	#		stop
+	#		start
+	#	fi
+	#	;;
+
+	*)
+		#echo $"Usage: $0 {start|stop|restart|condrestart|status}"
+		echo $"Usage: $0 {start|stop|restart|status}"
+		exit 1
+
+esac
+
+exit $RETVAL
